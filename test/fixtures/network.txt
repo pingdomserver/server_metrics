@@ -1,0 +1,13 @@
+### `cat /proc/net/dev`
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 374560323 1856730    0    0    0     0          0         0 374560323 1856730    0    0    0     0       0          0
+  eth0: 552462517623 3558957087    0 1364584    0     0          0         0 587598134392 2577271905    0    0    0     0       0          0
+  eth1: 6858417585848 11678891991    0 1364584    0     0          0         0 1746386430035 10460881172    0    0    0     0       0          0
+
+### `cat /proc/net/dev` second run
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 374560323 1856730    0    0    0     0          0         0 374560323 1856730    0    0    0     0       0          0
+  eth0: 552465252508 3558974617    0 1364590    0     0          0         0 587600612397 2577284599    0    0    0     0       0          0
+  eth1: 6858453491060 11678952278    0 1364590    0     0          0         0 1746395339079 10460934020    0    0    0     0       0          0
