@@ -1,6 +1,6 @@
 $LOAD_PATH << File.expand_path( File.dirname(__FILE__) + '/..' )
 require 'test/unit'
-require 'lib/system_metrics'
+require 'lib/server_metrics'
 require 'pry'
 require 'awesome_print'
 require 'timecop'

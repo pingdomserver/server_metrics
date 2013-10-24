@@ -1,33 +1,36 @@
 require 'sys/proctable'
 
+# Collects information on processes. Groups processes running under the same command, and sums up their CPU & memory usage.
+# CPU is calculated **since the last run**
+#
 module Scout
   class Processes
 
     def initialize(num_processors)
+      @num_processors = num_processors
       @last_run
       @last_process_list
-      @num_processors = num_processors
       @last_utime
       @last_stime
-
     end
 
-    # returns two arrays. The arrays have the top 10 memory using processes, and the top 10 CPU using processes.
+    # This is the main method to call. It returns a hash of two arrays.
+    # The arrays have the top 10 memory using processes, and the top 10 CPU using processes, respectively.
     # The array elements are hashes that look like this:
     #
     # {:top_memory=>
     #    [
     #     {
-    #      :commmand => "mysqld",
-    #      :count    => 1,
-    #      :cpu      => 34,
-    #      :memory   => 2
+    #      :cmd => "mysqld",    # the command (without the path of arguments being run)
+    #      :count    => 1,      # the number of these processes (grouped by the above command)
+    #      :cpu      => 34,     # the total CPU usag of the processes
+    #      :memory   => 2       # the total memory usage of the processes
     #     }, ...
     #   ],
     # :top_cpu=>
     #   [
     #     {
-    #      :commmand => "mysqld",
+    #      :cmd => "mysqld",
     #      :count    => 1,
     #      :cpu      => 34,
     #      :memory   => 2
@@ -43,7 +46,9 @@ module Scout
       }
     end
 
-
+    # called from run(). This method lists all the processes running on the server, groups them by command,
+    # and calculates CPU time for each process. Since CPU time has to be calculated relative to the last sample,
+    # the collector has to be run twice to get CPU data.
     def calculate_processes
       ## 1. get a list of all processes grouped by command
       processes = Sys::ProcTable.ps
@@ -90,26 +95,6 @@ module Scout
     def get_top_processes(order_by, num)
       @processes.map{ |key,hash| {:cmd=>key}.merge(hash) } .sort{|a,b| a[order_by] <=> b[order_by] }.reverse[0...num-1]
     end
-
-    #def get_overall_cpu
-    #   res=nil
-    #   now = Time.now
-    #   t = ::Process.times
-    #   if @last_run
-    #     elapsed_time = now - @last_run
-    #     if elapsed_time >= 1
-    #       user_time_since_last_sample = t.utime - @last_utime
-    #       system_time_since_last_sample = t.stime - @last_stime
-    #       res = ((user_time_since_last_sample + system_time_since_last_sample)/(elapsed_time * @num_processors))*100
-    #     end
-    #   end
-    #   @last_utime = t.utime
-    #   @last_stime = t.stime
-    #   @last_run = now
-    #   return res
-    #end
-
-  end # class ProcessList
-
-end # module Scout
+  end
+end
 

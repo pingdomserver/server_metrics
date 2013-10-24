@@ -36,7 +36,7 @@ pp harness.latest_run
 #while(true) do
 #  harness.run
 #  puts "running at #{Time.now}"
-#  File.open("system_metrics.json","w") do |f|
+#  File.open("server_metrics.json","w") do |f|
 #    f.puts harness.latest_run
 #  end
 #  sleep 15

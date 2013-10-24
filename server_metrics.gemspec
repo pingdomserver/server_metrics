@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'scout/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "system_metrics"
+  spec.name          = "server_metrics"
   spec.version       = ServerMetrics::VERSION
   spec.authors       = ["Andre Lewis"]
   spec.email         = ["andre@scoutapp.com"]

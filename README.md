@@ -4,9 +4,9 @@ Collects key metrics on CPU, disks, memory, network interfaces, and processes.
 
 ## Use
 
-    $ gem install system_metrics
+    $ gem install server_metrics
 
-    require 'system_metrics'
+    require 'server_metrics'
     cpu=Scout::Cpu.new
     cpu.run
     pp cpu.data.inspect
