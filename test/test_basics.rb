@@ -4,15 +4,15 @@ class TestWithFixtures < Test::Unit::TestCase
 
   def test_colectors_defined
     assert_nothing_raised do
-      Scout::Cpu
-      Scout::Disk
-      Scout::Memory
-      Scout::Network
+      ServerMetrics::Cpu
+      ServerMetrics::Disk
+      ServerMetrics::Memory
+      ServerMetrics::Network
     end
   end
 
   def test_collector_to_hash
-    c=Scout::Collector.new(:port=>80)
+    c=ServerMetrics::Collector.new(:port=>80)
     h=c.to_hash
     assert h[:options]
     assert h[:data]
@@ -20,8 +20,8 @@ class TestWithFixtures < Test::Unit::TestCase
   end
 
   def test_collector_from_hash
-    c=Scout::Collector.new(:port=>80)
-    c2=Scout::Collector.from_hash(c.to_hash)
+    c=ServerMetrics::Collector.new(:port=>80)
+    c2=ServerMetrics::Collector.from_hash(c.to_hash)
     assert_equal 80, c2.option(:port)
   end
 
@@ -48,7 +48,6 @@ class TestWithFixtures < Test::Unit::TestCase
       assert_includes(450..550, c.data["val"])
     end
   end
-
 
 
   def test_multi_collector
@@ -79,21 +78,38 @@ class TestWithFixtures < Test::Unit::TestCase
     end
   end
 
+  def test_processes_to_hash
+    p = ServerMetrics::Processes.new(2)
+    last_run=Time.now-60
+    p.instance_variable_set '@last_run', last_run
+    p.instance_variable_set '@last_process_list', "bogus value"
+
+    assert_equal({:last_run=>last_run,:last_process_list=>"bogus value"}, p.to_h)
+  end
+
+  def test_processes_from_hash
+    last_run=Time.now-60
+    p=ServerMetrics::Processes.from_hash({:last_run=>last_run,:last_process_list=>"bogus value"}, 2)
+    assert_equal 2, p.instance_variable_get("@num_processors")
+    assert_equal last_run, p.instance_variable_get("@last_run")
+    assert_equal "bogus value", p.instance_variable_get("@last_process_list")
+  end
+
   # Helper Classes
-  class SomeCollector < Scout::Collector
+  class SomeCollector < ServerMetrics::Collector
     def build_report
       report(:capacity=>9)
     end
   end
 
-  class SomeMultiCollector < Scout::MultiCollector
+  class SomeMultiCollector < ServerMetrics::MultiCollector
     def build_report
       report(:alpha,"capacity"=>9)
       report(:beta,"capacity"=>10)
     end
   end
 
-  class SomeCollectorWithMemory < Scout::Collector
+  class SomeCollectorWithMemory < ServerMetrics::Collector
     def build_report
       @val = memory(:val) || 0
       report("val"=>@val)
@@ -101,7 +117,7 @@ class TestWithFixtures < Test::Unit::TestCase
     end
   end
 
-  class SomeMultiCollectorWithMemory < Scout::MultiCollector
+  class SomeMultiCollectorWithMemory < ServerMetrics::MultiCollector
     def build_report
       @alpha_val = memory(:alpha,:val) || 0
       @beta_val = memory(:beta,:val) || 100
@@ -114,7 +130,7 @@ class TestWithFixtures < Test::Unit::TestCase
     end
   end
 
-  class SomeCollectorWithCounter < Scout::Collector
+  class SomeCollectorWithCounter < ServerMetrics::Collector
     def build_report
       @val = memory(:val) || 0
       counter "val", @val, :per=>:second
@@ -122,7 +138,7 @@ class TestWithFixtures < Test::Unit::TestCase
     end
   end
 
-  class SomeMultiCollectorWithCounter < Scout::MultiCollector
+  class SomeMultiCollectorWithCounter < ServerMetrics::MultiCollector
     def build_report
       @alpha_val = memory(:alpha,:val) || 0
       @beta_val = memory(:beta,:val) || 0

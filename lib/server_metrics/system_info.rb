@@ -1,7 +1,7 @@
 require 'rbconfig'
 require 'socket'
 
-module Scout
+module ServerMetrics
   class SystemInfo
 
     def self.architecture

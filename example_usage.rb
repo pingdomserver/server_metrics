@@ -8,9 +8,9 @@ class Harness
   def initialize
     @num_runs=0
 
-    @collectors={:disks => Scout::Disk.new(), :cpu => Scout::Cpu.new(), :memory => Scout::Memory.new(), :network => Scout::Network.new(), :processes=>Scout::Processes.new(Scout::SystemInfo.num_processors)}
+    @collectors={:disks => ServerMetrics::Disk.new(), :cpu => ServerMetrics::Cpu.new(), :memory => ServerMetrics::Memory.new(), :network => ServerMetrics::Network.new(), :processes=>ServerMetrics::Processes.new(ServerMetrics::SystemInfo.num_processors)}
 
-    @system_info = Scout::SystemInfo.to_h
+    @system_info = ServerMetrics::SystemInfo.to_h
   end
 
   def run

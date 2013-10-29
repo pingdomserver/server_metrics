@@ -1,4 +1,4 @@
-class Scout::Memory < Scout::Collector
+class ServerMetrics::Memory < ServerMetrics::Collector
   # reports darwin units as MB
   DARWIN_UNITS = { "b" => 1/(1024*1024),
                    "k" => 1/1024,

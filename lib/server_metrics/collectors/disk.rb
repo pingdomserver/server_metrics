@@ -3,7 +3,7 @@
 # TODO: Currently, this reports on devices that begins with /dev as listed by `mount`. Revisit this.
 # TODO: relies on /proc/diskstats, so not mac compatible. Figure out mac compatibility
 #
-class Scout::Disk < Scout::MultiCollector
+class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   def build_report
     @df_output = `df -h`.split("\n")

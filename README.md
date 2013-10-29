@@ -7,19 +7,19 @@ Collects key metrics on CPU, disks, memory, network interfaces, and processes.
     $ gem install server_metrics
 
     require 'server_metrics'
-    cpu=Scout::Cpu.new
+    cpu=ServerMetrics::Cpu.new
     cpu.run
     pp cpu.data.inspect
 
     # same with:
 
-    Scout::Disk.new
-    Scout::Memory.new
-    Scout::Network.new
+    ServerMetrics::Disk.new
+    ServerMetrics::Memory.new
+    ServerMetrics::Network.new
 
     # also see:
 
-    Scout::SystemInfo.to_hash
+    ServerMetrics::SystemInfo.to_hash
 
 ## Creating a new collector
 

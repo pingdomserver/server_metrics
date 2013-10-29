@@ -1,6 +1,6 @@
-require "scout/system_info"
+require "server_metrics/system_info"
 
-class Scout::Network < Scout::MultiCollector
+class ServerMetrics::Network < ServerMetrics::MultiCollector
 
   def build_report
 

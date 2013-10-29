@@ -1,6 +1,6 @@
 require "time"
 
-class Scout::Cpu < Scout::Collector
+class ServerMetrics::Cpu < ServerMetrics::Collector
 
   # Raised by #CpuStats when an error reading /proc/stats.
   class ProcStatError < Exception

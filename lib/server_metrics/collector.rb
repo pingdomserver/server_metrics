@@ -11,7 +11,7 @@
 # 2. intended to persist in memory: a collector maintains its own memory. Reuse the same instance as many times as needed.
 #    If you need to persist to disk, use the to_hash and from_hash methods.
 #
-module Scout
+module ServerMetrics
   class Collector
     attr_reader :collector_id
     attr_accessor :data, :error
@@ -129,10 +129,10 @@ module Scout
 
     # see to_hash. The hash should contain :options and :memory keys
     def self.from_hash(hash)
-      p=Collector.new(hash[:options])
-      p.instance_variable_set('@memory', hash[:memory])
-      p.instance_variable_set('@data', hash[:data])
-      p
+      c=Collector.new(hash[:options])
+      c.instance_variable_set('@memory', hash[:memory])
+      c.instance_variable_set('@data', hash[:data])
+      c
     end
 
     def linux?

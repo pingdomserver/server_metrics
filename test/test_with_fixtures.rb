@@ -4,9 +4,9 @@ class TestWithFixtures < Test::Unit::TestCase
 
   def test_cpu
     fixture = fixtures(:cpu)
-    c = Scout::Cpu.new()
+    c = ServerMetrics::Cpu.new()
 
-    Scout::Cpu::CpuStats.expects(:`).with("cat /proc/stat 2>&1").returns(fixture.command("cat /proc/stat 2>&1")).once
+    ServerMetrics::Cpu::CpuStats.expects(:`).with("cat /proc/stat 2>&1").returns(fixture.command("cat /proc/stat 2>&1")).once
     c.expects(:`).with("uptime").returns(fixture.command("uptime")).once
 
     c.run
@@ -21,7 +21,7 @@ class TestWithFixtures < Test::Unit::TestCase
     fixture = fixtures(:cpu)
     c = test_cpu
 
-    Scout::Cpu::CpuStats.expects(:`).with("cat /proc/stat 2>&1").returns(fixture.command("cat /proc/stat 2>&1", "second run")).once
+    ServerMetrics::Cpu::CpuStats.expects(:`).with("cat /proc/stat 2>&1").returns(fixture.command("cat /proc/stat 2>&1", "second run")).once
     c.expects(:`).with("uptime").returns(fixture.command("uptime")).once
 
     Timecop.travel(60) do
@@ -35,7 +35,7 @@ class TestWithFixtures < Test::Unit::TestCase
 
   # First run we get size info
   def test_disk
-    c = Scout::Disk.new()
+    c = ServerMetrics::Disk.new()
     fixture = fixtures(:disk)
     c.expects(:`).with("mount").returns(fixture.command("mount")).once
     c.expects(:`).with("df -h").returns(fixture.command("df -h")).once
@@ -75,7 +75,7 @@ class TestWithFixtures < Test::Unit::TestCase
 
   def test_memory
     fixture = fixtures(:memory)
-    c = Scout::Memory.new()
+    c = ServerMetrics::Memory.new()
     c.expects(:`).with("uname").returns("Linux").times(2)
     c.expects(:`).with("cat /proc/meminfo").returns(fixture.command("cat /proc/meminfo")).once
     c.run
@@ -85,7 +85,7 @@ class TestWithFixtures < Test::Unit::TestCase
 
   def test_network
     fixture = fixtures(:network)
-    c = Scout::Network.new()
+    c = ServerMetrics::Network.new()
     c.expects(:`).with("cat /proc/net/dev").returns(fixture.command("cat /proc/net/dev")).once
     c.run
 

@@ -14,8 +14,8 @@
 #
 #}
 
-module Scout
-  class MultiCollector < Scout::Collector
+module ServerMetrics
+  class MultiCollector < ServerMetrics::Collector
 
     # report("/dev/desk2", :key=>value)
     def report(bundle_name, values)
