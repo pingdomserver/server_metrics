@@ -34,7 +34,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     result = {}
     hash.each_pair do |key,value|
       key=normalize_key(key) # downcase, make a symbol, etc
-      value = convert_to_mb(value) if [:avail,:capacity,:size,:used, :usepercent].include?(key)
+      value = convert_to_mb(value) if [:avail, :capacity, :size, :used].include?(key)
       result[key]=value
     end
 
@@ -48,8 +48,8 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     if stats
       counter(device, :rps,   stats['rio'],        :per => :second)
       counter(device, :wps,   stats['wio'],        :per => :second)
-      counter(device, :kb_rps, stats['rsect'] / 2,  :per => :second)
-      counter(device, :kb_wps, stats['wsect'] / 2,  :per => :second)
+      counter(device, :rps_kb, stats['rsect'] / 2,  :per => :second)
+      counter(device, :wps_kb, stats['wsect'] / 2,  :per => :second)
       counter(device, :utilization,  stats['use'] / 10.0, :per => :second)
       # Not 100% sure that average queue length is present on all distros.
       if stats['aveq']
@@ -104,6 +104,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   end
 
   def normalize_key(key)
+    key = "Used Percent" if /capacity|use.*%|%.*use/i === key
     key.downcase.gsub(" ", "_").to_sym
   end
 end

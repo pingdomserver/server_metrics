@@ -49,12 +49,12 @@ class ServerMetrics::Memory < ServerMetrics::Collector
     # will be passed at the end to report to Scout
     report_data = Hash.new
 
-    report_data[:memory_total] = mem_total
-    report_data[:memory_used] = mem_used
-    report_data[:memory_available] = mem_total - mem_used
-    report_data[:memory_used_percent] = mem_percent_used
+    report_data[:size] = mem_total
+    report_data[:used] = mem_used
+    report_data[:avail] = mem_total - mem_used
+    report_data[:used_percent] = mem_percent_used
 
-    report_data[:swap_total] = swap_total
+    report_data[:swap_size] = swap_total
     report_data[:swap_used] = swap_used
     unless  swap_total == 0
       report_data[:swap_used_percent] = swap_percent_used
@@ -80,15 +80,15 @@ class ServerMetrics::Memory < ServerMetrics::Collector
     mem.scan(/(\d+|\d+\.\d+)([bkmg])\s+(\w+)/i) do |amount, unit, label|
       case label
         when 'used'
-          report_data[:memory_used] =
+          report_data[:used] =
               (amount.to_f * DARWIN_UNITS[unit.downcase]).round
         when 'free'
-          report_data[:memory_available] =
+          report_data[:avail] =
               (amount.to_f * DARWIN_UNITS[unit.downcase]).round
       end
     end
-    report_data[:memory_total] = report_data[:memory_used]+report_data[:memory_available]
-    report_data[:memory_used_percent] = ((report_data[:memory_used].to_f/report_data[:memory_total])*100).to_i
+    report_data[:size] = report_data[:used]+report_data[:avail]
+    report_data[:used_percent] = ((report_data[:used].to_f/report_data[:size])*100).to_i
     @data = report_data
   end
 
@@ -102,23 +102,23 @@ class ServerMetrics::Memory < ServerMetrics::Collector
     prstat =~ /(ZONEID[^\n]*)\n(.*)/
     values = $2.split(' ')
 
-    report_data[:memory_used] = convert_to_mb(values[3])
+    report_data[:used] = convert_to_mb(values[3])
     report_data[:swap_used]   = convert_to_mb(values[2])
 
     prtconf = `/usr/sbin/prtconf | grep Memory`
 
     prtconf =~ /\d+/
-    report_data[:memory_total] = $&.to_i
-    report_data[:memory_used_percent] = (report_data[:memory_used] / report_data[:memory_total].to_f * 100).to_i
+    report_data[:size] = $&.to_i
+    report_data[:used_percent] = (report_data[:used] / report_data[:size].to_f * 100).to_i
 
     swap = `swap -s`
     swap =~ /\d+[a-zA-Z]\sused/
     swap_used = convert_to_mb($&)
     swap =~ /\d+[a-zA-Z]\savailable/
     swap_available = convert_to_mb($&)
-    report_data[:swap_total] = swap_used+swap_available
-    unless report_data[:swap_total] == 0
-      report_data[:swap_used_percent] = (report_data[:swap_used] / report_data[:swap_total].to_f * 100).to_i
+    report_data[:swap_size] = swap_used+swap_available
+    unless report_data[:swap_size] == 0
+      report_data[:swap_used_percent] = (report_data[:swap_used] / report_data[:swap_size].to_f * 100).to_i
     end
 
     @data = report_data

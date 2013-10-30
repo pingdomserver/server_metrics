@@ -50,10 +50,45 @@ class TestWithFixtures < Test::Unit::TestCase
     assert res[:filesystem]
     assert res[:mounted_on]
     assert res[:size]
-    assert res[:"use%"]
+    assert res[:used_percent]
     assert res[:used]
     assert_equal 6, res.keys.size
     c
+  end
+
+  def test_disk_converts_use_percent_and_capacity_to_used_percent
+    response_varieties = []
+    response_varieties << <<-eos
+Filesystem  Capacity
+/dev/xvda1  70%
+none        0%
+none        0%
+eos
+    
+    response_varieties << <<-eos
+Filesystem  Use%
+/dev/xvda1  70%
+none        0%
+none        0%
+eos
+    
+    response_varieties<< <<-eos
+Filesystem  %Use
+/dev/xvda1  70%
+none        0%
+none        0%
+eos
+    
+    fixture = fixtures(:disk)
+    response_varieties.each do |response|
+      c = ServerMetrics::Disk.new()
+      c.expects(:`).with("mount").returns(fixture.command("mount")).once
+      c.expects(:`).with("cat /proc/diskstats").returns(fixture.command("cat /proc/diskstats")).once
+      c.expects(:`).with("df -h").returns(response)
+      c.run
+
+      assert c.data['/dev/xvda1'][:used_percent]
+    end
   end
 
   # Second run we also get counter data
@@ -72,6 +107,8 @@ class TestWithFixtures < Test::Unit::TestCase
     res = c.data["/dev/xvda1"]
     assert res[:wps]
     assert res[:rps]
+    assert res[:rps_kb]
+    assert res[:wps_kb]
   end
 
   def test_memory
@@ -81,7 +118,14 @@ class TestWithFixtures < Test::Unit::TestCase
     c.expects(:`).with("cat /proc/meminfo").returns(fixture.command("cat /proc/meminfo")).once
     c.run
     assert_equal 7, c.data.keys.size
-    assert c.data[:swap_total]
+    # the field names should align with the disk field names
+    assert c.data[:swap_size]
+    assert c.data[:swap_used]
+    assert c.data[:swap_used_percent]
+    assert c.data[:used]
+    assert c.data[:avail]
+    assert c.data[:used_percent]
+    assert c.data[:size]
   end
 
   def test_network
