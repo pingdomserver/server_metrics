@@ -1,6 +1,6 @@
 require File.expand_path("test_helper",File.dirname(__FILE__))
 
-class TestWithFixtures < Test::Unit::TestCase
+class TestBasics < Test::Unit::TestCase
 
   def test_colectors_defined
     assert_nothing_raised do
@@ -90,6 +90,7 @@ class TestWithFixtures < Test::Unit::TestCase
   def test_processes_from_hash
     last_run=Time.now-60
     p=ServerMetrics::Processes.from_hash(:last_run=>last_run,:last_process_list=>"bogus value")
+    assert p.is_a?(ServerMetrics::Processes)
     assert_equal last_run, p.instance_variable_get("@last_run")
     assert_equal "bogus value", p.instance_variable_get("@last_process_list")
   end

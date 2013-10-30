@@ -106,6 +106,7 @@ class ServerMetrics::Processes
   # for reinstantiating from a hash
   # why not just use marshall? this is a lot more manageable written to the Scout agent's history file.
   def self.from_hash(hash)
+    p=new(hash[:options])
     p.instance_variable_set('@last_run', hash[:last_run])
     p.instance_variable_set('@last_process_list', hash[:last_process_list])
     p
