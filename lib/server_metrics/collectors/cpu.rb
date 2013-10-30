@@ -25,9 +25,9 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
     uptime_output = `uptime`
     matches = uptime_output.match(/load averages?: ([\d.]+),? ([\d.]+),? ([\d.]+)\Z/)
 
-    report("Last minute" => matches[1].to_f,
-           "Last five minutes" => matches[2].to_f,
-           "Last fifteen minutes" => matches[3].to_f)
+    report(:last_minute => matches[1].to_f,
+           :last_five_minutes => matches[2].to_f,
+           :last_fifteen_minutes => matches[3].to_f)
   end
 
   # Helper class
@@ -102,22 +102,22 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
       divo2 = div / 2
 
       results = {
-          "User" => (100.0 * diff_user + divo2) / div,
-          "System" => (100.0 * diff_system + divo2) / div,
-          "Idle" => (100.0 * diff_idle + divo2) / div,
-          "IO wait" => (100.0 * diff_iowait + divo2) / div,
-          "Procs running" => self.procs_running,
-          "Procs blocked" => self.procs_blocked
+          :user => (100.0 * diff_user + divo2) / div,
+          :system => (100.0 * diff_system + divo2) / div,
+          :idle => (100.0 * diff_idle + divo2) / div,
+          :io_wait => (100.0 * diff_iowait + divo2) / div,
+          :procs_running => self.procs_running,
+          :procs_blocked => self.procs_blocked
       }
 
       if diff_steal && steal > 0
-        results["Steal"] = (100.0 * diff_steal + divo2) / div
+        results[:steal] = (100.0 * diff_steal + divo2) / div
       end
 
       if self.time && other.time
         diff_in_seconds = self.time.to_f - other.time.to_f
 
-        results["Interrupts"] = (self.interrupts.to_f - other.interrupts.to_f) / diff_in_seconds
+        results[:interrupts] = (self.interrupts.to_f - other.interrupts.to_f) / diff_in_seconds
       end
 
       results

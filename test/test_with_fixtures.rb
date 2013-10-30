@@ -10,9 +10,9 @@ class TestWithFixtures < Test::Unit::TestCase
     c.expects(:`).with("uptime").returns(fixture.command("uptime")).once
 
     c.run
-    assert c.data["Last minute"]
-    assert c.data["Last five minutes"]
-    assert c.data["Last fifteen minutes"]
+    assert c.data[:last_minute]
+    assert c.data[:last_five_minutes]
+    assert c.data[:last_fifteen_minutes]
     assert_equal 3, c.data.keys.size
     c
   end
@@ -28,8 +28,8 @@ class TestWithFixtures < Test::Unit::TestCase
       c.run
     end
 
-    assert c.data["IO wait"]
-    assert c.data["Idle"]
+    assert c.data[:io_wait]
+    assert c.data[:idle]
   end
 
 
@@ -43,14 +43,15 @@ class TestWithFixtures < Test::Unit::TestCase
     c.run
 
     assert_equal ["/dev/xvda1"], c.data.keys
+    
     res = c.data["/dev/xvda1"]
 
-    assert res["Avail"]
-    assert res["Filesystem"]
-    assert res["Mounted on"]
-    assert res["Size"]
-    assert res["Use%"]
-    assert res["Used"]
+    assert res[:avail]
+    assert res[:filesystem]
+    assert res[:mounted_on]
+    assert res[:size]
+    assert res[:"use%"]
+    assert res[:used]
     assert_equal 6, res.keys.size
     c
   end
@@ -69,8 +70,8 @@ class TestWithFixtures < Test::Unit::TestCase
 
     assert_equal ["/dev/xvda1"], c.data.keys
     res = c.data["/dev/xvda1"]
-    assert res["WPS"]
-    assert res["RPS"]
+    assert res[:wps]
+    assert res[:rps]
   end
 
   def test_memory
@@ -80,7 +81,7 @@ class TestWithFixtures < Test::Unit::TestCase
     c.expects(:`).with("cat /proc/meminfo").returns(fixture.command("cat /proc/meminfo")).once
     c.run
     assert_equal 7, c.data.keys.size
-    assert c.data['Swap total']
+    assert c.data[:swap_total]
   end
 
   def test_network
@@ -98,8 +99,8 @@ class TestWithFixtures < Test::Unit::TestCase
     assert c.data.keys.include?("eth1")
     assert_equal 2, c.data.keys.size
 
-    assert c.data["eth0"]["Bytes in"]
-    assert c.data["eth1"]["Bytes in"]
+    assert c.data["eth0"][:bytes_in]
+    assert c.data["eth1"][:bytes_in]
   end
 end
 

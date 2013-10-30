@@ -4,7 +4,7 @@ require 'lib/server_metrics'
 require 'pry'
 require 'awesome_print'
 require 'timecop'
-require 'mocha'
+require 'mocha/setup'
 AwesomePrint.defaults = {
     :indent => -2,
     :sort_keys =>true

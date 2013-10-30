@@ -33,7 +33,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     hash = parsed_lines.select{|l| l["Filesystem"] == device}.first
     result = {}
     hash.each_pair do |key,value|
-      #key=normalize_key(key) # downcase, make a symbol, etc
+      key=normalize_key(key) # downcase, make a symbol, etc
       value = convert_to_mb(value) if [:avail,:capacity,:size,:used, :usepercent].include?(key)
       result[key]=value
     end
@@ -46,14 +46,14 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     stats = iostat(device)
 
     if stats
-      counter(device, "RPS",   stats['rio'],        :per => :second)
-      counter(device, "WPS",   stats['wio'],        :per => :second)
-      counter(device, "Kb RPS", stats['rsect'] / 2,  :per => :second)
-      counter(device, "Kb WPS", stats['wsect'] / 2,  :per => :second)
-      counter(device, "Utilization",  stats['use'] / 10.0, :per => :second)
+      counter(device, :rps,   stats['rio'],        :per => :second)
+      counter(device, :wps,   stats['wio'],        :per => :second)
+      counter(device, :kb_rps, stats['rsect'] / 2,  :per => :second)
+      counter(device, :kb_wps, stats['wsect'] / 2,  :per => :second)
+      counter(device, :utilization,  stats['use'] / 10.0, :per => :second)
       # Not 100% sure that average queue length is present on all distros.
       if stats['aveq']
-        counter(device, "Average queue length",  stats['aveq'], :per => :second)
+        counter(device, :average_queue_length,  stats['aveq'], :per => :second)
       end
 
       if old = memory(device, "stats")
@@ -62,7 +62,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
         if ios > 0
           await = ((stats['ruse'] - old['ruse']) + (stats['wuse'] - old['wuse'])) / ios.to_f
 
-          report(device, "Await" => await)
+          report(device, :await => await)
         end
       end
 
@@ -103,4 +103,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     return found_device || lvm
   end
 
+  def normalize_key(key)
+    key.downcase.gsub(" ", "_").to_sym
+  end
 end
