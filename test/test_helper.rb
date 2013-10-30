@@ -1,10 +1,12 @@
 $LOAD_PATH << File.expand_path( File.dirname(__FILE__) + '/..' )
 require 'test/unit'
-require 'lib/server_metrics'
+require 'rubygems'
 require 'pry'
 require 'awesome_print'
 require 'timecop'
 require 'mocha/setup'
+
+require 'lib/server_metrics'
 AwesomePrint.defaults = {
     :indent => -2,
     :sort_keys =>true

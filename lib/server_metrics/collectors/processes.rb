@@ -11,36 +11,40 @@ class ServerMetrics::Processes
     @last_process_list
   end
 
-  # This is the main method to call. It returns a hash of two arrays.
-  # The arrays have the top 10 memory using processes, and the top 10 CPU using processes, respectively.
-  # The array elements are hashes that look like this:
+
+  # This is the main method to call. It returns a hash of processes, keyed by the executable name.
+  # Processes are returned either because they are a top 10 CPU consumer, or a top 10 memory consumer.
   #
-  # {:top_memory=>
-  #    [
+  # The exact number or processes returned depends on the overlap between the two lists (cpu and memory consumers).
+  # The list will always be between 10 and 20 items long.
+
+  # {'mysqld' =>
   #     {
   #      :cmd => "mysqld",    # the command (without the path of arguments being run)
   #      :count    => 1,      # the number of these processes (grouped by the above command)
-  #      :cpu      => 34,     # the total CPU usag of the processes
-  #      :memory   => 2       # the total memory usage of the processes
-  #     }, ...
-  #   ],
-  # :top_cpu=>
-  #   [
+  #      :cpu      => 34,     # the total CPU usage of the processes
+  #      :memory   => 2,      # the total memory usage of the processes
+  #      :cmd_lines => ["cmd args1", "cmd args2"]
+  #     },
+  #  'apache' =>
   #     {
-  #      :cmd => "mysqld",
-  #      :count    => 1,
-  #      :cpu      => 34,
-  #      :memory   => 2
-  #     }, ...
-  #   ]
-  #  }
+  #      ....
+  #     }
+  # }
+
   def run
     @processes = calculate_processes # returns a hash
+    top_memory = get_top_processes(:memory, 10) # returns an array
+    top_cpu = get_top_processes(:memory, 10) # returns an array
 
-    {
-        :top_memory => get_top_processes(:memory, 10),
-        :top_cpu => get_top_processes(:cpu, 10)
-    }
+    # combine the two and index by cmd. The indexing process will remove duplicates
+    result = (top_cpu + top_memory).inject(Hash.new) {|temp_hash,process_hash| temp_hash[process_hash[:cmd]] = process_hash; temp_hash }
+
+    # An alternate approach is to return an array with two separate arrays. More explicit, but more verbose.
+    #{
+    #    :top_memory => get_top_processes(:memory, 10),
+    #    :top_cpu => get_top_processes(:cpu, 10)
+    #}
   end
 
   # called from run(). This method lists all the processes running on the server, groups them by command,
@@ -90,7 +94,7 @@ class ServerMetrics::Processes
   # Returns an array of hashes:
   # [{:cmd=>"ruby", :cpu=>30.0, :memory=>100, :uid=>1,:cmdlines=>[]}, {:cmd => ...} ]
   def get_top_processes(order_by, num)
-    @processes.map { |key, hash| {:cmd => key}.merge(hash) }.sort { |a, b| a[order_by] <=> b[order_by] }.reverse[0...num-1]
+    @processes.map { |key, hash| {:cmd => key}.merge(hash) }.sort { |a, b| a[order_by] <=> b[order_by] }.reverse[0...num]
   end
 
   # for persisting to a file -- conforms to same basic API as the Collectors do.
