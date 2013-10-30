@@ -6,8 +6,7 @@ require 'sys/proctable'
 
 class ServerMetrics::Processes
 
-  def initialize(num_processors)
-    @num_processors = num_processors
+  def initialize(options={})
     @last_run
     @last_process_list
   end
@@ -75,7 +74,7 @@ class ServerMetrics::Processes
         grouped.each do |name, values|
           if last_values = @last_process_list[name]
             cpu_since_last_sample = values[:raw_cpu] - last_values[:raw_cpu]
-            grouped[name][:cpu] = (cpu_since_last_sample/(elapsed_time * @num_processors))*100
+            grouped[name][:cpu] = (cpu_since_last_sample/(elapsed_time * ServerMetrics::SystemInfo.num_processors))*100
           else
             grouped.reject!(name) # no data from last run. don't report anything.
           end
@@ -95,15 +94,14 @@ class ServerMetrics::Processes
   end
 
   # for persisting to a file -- conforms to same basic API as the Collectors do.
-  # why not just use marshall? this is a lot more manageable written to the Scout agent's history file.
-  def to_h
+  # why not just use marshall? This is a lot more manageable written to the Scout agent's history file.
+  def to_hash
     {:last_run=>@last_run, :last_process_list=>@last_process_list}
   end
 
   # for reinstantiating from a hash
   # why not just use marshall? this is a lot more manageable written to the Scout agent's history file.
-  def self.from_hash(hash,num_processors)
-    p=ServerMetrics::Processes.new(num_processors)
+  def self.from_hash(hash)
     p.instance_variable_set('@last_run', hash[:last_run])
     p.instance_variable_set('@last_process_list', hash[:last_process_list])
     p
