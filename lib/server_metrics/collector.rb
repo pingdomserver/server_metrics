@@ -118,10 +118,10 @@ module ServerMetrics
       (key.is_a?(String) ? key : key.to_s).downcase.gsub(" ", "_").gsub("%", "percent").to_sym
     end
 
-    # returns a hash you can serialize and store on disk, or just hold onto and re-instantiate the plugin later.
+    # returns a hash you can serialize and store on disk, or just hold onto and re-instantiate the collector later.
     # Why you'd need to do this: to persist the memory (including counters) of a plugin instance.
     #
-    # Plugin.from_hash(h) is the flipside of this: Plugin.from_hash(plugin.to_hash) gets you essentially the same instance
+    # Collector.from_hash(h) is the flipside of this: Collector.from_hash(plugin.to_hash) gets you essentially the same instance
     #
     def to_hash
       {:options => @options, :memory => @memory, :data => @data, :plugin_id => @plugin_id}
@@ -129,7 +129,7 @@ module ServerMetrics
 
     # see to_hash. The hash should contain :options and :memory keys
     def self.from_hash(hash)
-      c=Collector.new(hash[:options])
+      c=new(hash[:options])
       c.instance_variable_set('@memory', hash[:memory])
       c.instance_variable_set('@data', hash[:data])
       c

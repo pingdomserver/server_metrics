@@ -79,18 +79,17 @@ class TestWithFixtures < Test::Unit::TestCase
   end
 
   def test_processes_to_hash
-    p = ServerMetrics::Processes.new(2)
+    p = ServerMetrics::Processes.new
     last_run=Time.now-60
     p.instance_variable_set '@last_run', last_run
     p.instance_variable_set '@last_process_list', "bogus value"
 
-    assert_equal({:last_run=>last_run,:last_process_list=>"bogus value"}, p.to_h)
+    assert_equal({:last_run=>last_run,:last_process_list=>"bogus value"}, p.to_hash)
   end
 
   def test_processes_from_hash
     last_run=Time.now-60
-    p=ServerMetrics::Processes.from_hash({:last_run=>last_run,:last_process_list=>"bogus value"}, 2)
-    assert_equal 2, p.instance_variable_get("@num_processors")
+    p=ServerMetrics::Processes.from_hash(:last_run=>last_run,:last_process_list=>"bogus value")
     assert_equal last_run, p.instance_variable_get("@last_run")
     assert_equal "bogus value", p.instance_variable_get("@last_process_list")
   end
