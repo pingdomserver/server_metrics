@@ -129,7 +129,7 @@ module ServerMetrics
 
     # see to_hash. The hash should contain :options and :memory keys
     def self.from_hash(hash)
-      c=Collector.new(hash[:options])
+      c=new(hash[:options])
       c.instance_variable_set('@memory', hash[:memory])
       c.instance_variable_set('@data', hash[:data])
       c
