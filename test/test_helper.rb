@@ -1,12 +1,12 @@
-$LOAD_PATH << File.expand_path( File.dirname(__FILE__) + '/..' )
-require 'test/unit'
-require 'rubygems'
+$LOAD_PATH << File.expand_path( File.dirname(__FILE__) + '/../lib' ) # needed because when running tests, Rubygems manage $LOAD_PATH like it does in runtime
+require 'rubygems' # so the development-only dependencies below can be loaded
 require 'pry'
 require 'awesome_print'
 require 'timecop'
+require 'test/unit'
 require 'mocha/setup'
+require 'server_metrics'
 
-require 'lib/server_metrics'
 AwesomePrint.defaults = {
     :indent => -2,
     :sort_keys =>true

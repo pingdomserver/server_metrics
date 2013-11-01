@@ -1,5 +1,3 @@
-$LOAD_PATH << File.join(File.dirname(__FILE__))
-
 require 'server_metrics/version'
 require 'server_metrics/collector'
 require 'server_metrics/multi_collector'
