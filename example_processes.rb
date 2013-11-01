@@ -1,8 +1,10 @@
 require "rubygems"
-require File.dirname(__FILE__)+ "/lib/server_metrics"
+
+$LOAD_PATH.unshift(File.expand_path(__FILE__), "lib") # set the loadpath for convenience during development
+require "server_metrics"
+
 require "pry"
 require "awesome_print"
-
 
 p = ServerMetrics::Processes.new(1)
 puts "stating ..."
