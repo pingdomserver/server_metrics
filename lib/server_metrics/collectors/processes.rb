@@ -76,17 +76,20 @@ class ServerMetrics::Processes
       elapsed_time = now - @last_run # in seconds
       if elapsed_time >= 1
         grouped.each do |name, values|
+          # if the process was around last time, calculate CPU relative to the last run. If the process wasn't around last time, return CPU since the process start
           if last_values = @last_process_list[name]
             cpu_since_last_sample = values[:raw_cpu] - last_values[:raw_cpu]
             grouped[name][:cpu] = (cpu_since_last_sample/(elapsed_time * ServerMetrics::SystemInfo.num_processors))*100
           else
-            grouped.reject!(name) # no data from last run. don't report anything.
+            grouped[name][:cpu] = (values[:raw_cpu]/ServerMetrics::SystemInfo.num_processors)*100
           end
         end
       end
     end
     @last_process_list = grouped
     @last_run = now
+
+    #grouped.select{|k,v| v[:cpu]} # only return processes that have been around for two cycles, so we've been been able to calculate the CPU
     grouped
   end
 
