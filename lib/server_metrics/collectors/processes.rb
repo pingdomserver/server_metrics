@@ -2,12 +2,13 @@ require 'sys/proctable'
 require 'server_metrics/system_info'
 
 # Collects information on processes. Groups processes running under the same command, and sums up their CPU & memory usage.
-# CPU is calculated **since the last run**
-#
+# CPU is calculated **since the last run**, and is a pecentage of overall CPU usage during the timeframe
+# http://www.linuxquestions.org/questions/linux-general-1/per-process-cpu-utilization-557577/
 class ServerMetrics::Processes
 
   def initialize(options={})
     @last_run
+    @last_jiffies
     @last_process_list
   end
 
@@ -59,24 +60,24 @@ class ServerMetrics::Processes
     # The CPU values returned by ProcTable are cumulative for the life of the process, which is not what we want.
     # So, we rely on @last_process_list to make this calculation. If a process wasn't around last time, we use it's cumulative CPU time so far, which will be accurate enough.
     now = Time.now
-    aggregate_recent_cpu_of_all_processes = 1.0
-    if @last_run && @last_process_list
+    current_jiffies = get_jiffies
+    if @last_run && @last_jiffies && @last_process_list
       elapsed_time = now - @last_run # in seconds
+      elapsed_jiffies = current_jiffies - @last_jiffies
       if elapsed_time >= 1
         processes.each do |p|
           if last_cpu = @last_process_list[p.pid]
-            p.recent_cpu = (p.combined_cpu - last_cpu)/elapsed_time
+            p.recent_cpu = p.combined_cpu - last_cpu
           else
-            p.recent_cpu = p.combined_cpu # this process wasn't around last time, so just use the cumulative CPU time so far
+            p.recent_cpu = p.combined_cpu # this process wasn't around last time, so just use the cumulative CPU time for its existence so far
           end
-          aggregate_recent_cpu_of_all_processes = aggregate_recent_cpu_of_all_processes + p.recent_cpu
+          # a) p.recent_cpu / elapsed_jiffies = the amount of CPU time this process has taken divided by the total "time slots" the CPU has available
+          # b) * 100 ... this turns it into a percentage
+          # b) / num_processors ... this normalizes for the the number of processors in the system, so it reflects the amount of CPU power avaiable as a whole
+          p.recent_cpu_percentage = ((p.recent_cpu.to_f / elapsed_jiffies.to_f ) * 100.0) / ServerMetrics::SystemInfo.num_processors.to_f
         end
       end
     end
-
-    ## 3. now hat we have the aggregate CPU usage for all processes, loop through the processes once more and set the recent_cpu_percentage.
-    # note that this value is normalized for the number of processors
-    processes.each {|p| p.recent_cpu_percentage =  (p.recent_cpu / aggregate_recent_cpu_of_all_processes) * 100.0 / ServerMetrics::SystemInfo.num_processors }
 
     ## 3. group by command and aggregate the CPU
     grouped = {}
@@ -88,7 +89,7 @@ class ServerMetrics::Processes
           :cmdlines => []
       }
       grouped[proc.comm][:count]    += 1
-      grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage
+      grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage || 0
       grouped[proc.comm][:memory]   += proc.rss.to_f / 1024.0
       grouped[proc.comm][:cmdlines] << proc.cmdline if !grouped[proc.comm][:cmdlines].include?(proc.cmdline)
     end # processes.each
@@ -100,6 +101,7 @@ class ServerMetrics::Processes
     end
 
     @last_process_list = processes_to_store
+    @last_jiffies = current_jiffies
     @last_run = now
 
     grouped
@@ -112,10 +114,17 @@ class ServerMetrics::Processes
     @processes.map { |key, hash| {:cmd => key}.merge(hash) }.sort { |a, b| a[order_by] <=> b[order_by] }.reverse[0...num]
   end
 
+  # Relies on the /proc directory (/proc/timer_list). We need this because the process CPU utilization is measured in jiffies.
+  # In order to calculate the process' % usage of total CPU resources, we need to know how many jiffies have passed.
+  # Unfortunately, jiffies isn't a fixed value (it can vary between 100 and 250 per second), so we need to calculate it ourselves.
+  def get_jiffies
+    `cat /proc/timer_list`.match(/^jiffies: (\d+)$/)[1].to_i
+  end
+
   # for persisting to a file -- conforms to same basic API as the Collectors do.
   # why not just use marshall? This is a lot more manageable written to the Scout agent's history file.
   def to_hash
-    {:last_run=>@last_run, :last_process_list=>@last_process_list}
+    {:last_run=>@last_run, :last_jiffies=>@last_jiffies, :last_process_list=>@last_process_list}
   end
 
   # for reinstantiating from a hash
@@ -123,6 +132,7 @@ class ServerMetrics::Processes
   def self.from_hash(hash)
     p=new(hash[:options])
     p.instance_variable_set('@last_run', hash[:last_run])
+    p.instance_variable_set('@last_jiffies', hash[:last_jiffies])
     p.instance_variable_set('@last_process_list', hash[:last_process_list])
     p
   end
