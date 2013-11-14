@@ -52,7 +52,7 @@ class ServerMetrics::Processes
   # and calculates CPU time for each process. Since CPU time has to be calculated relative to the last sample,
   # the collector has to be run twice to get CPU data.
   def calculate_processes
-
+    num_processors = ServerMetrics::SystemInfo.num_processors
     ## 1. get a list of all processes
     processes = Sys::ProcTable.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method and adds some behavior
 
@@ -74,7 +74,7 @@ class ServerMetrics::Processes
           # a) p.recent_cpu / elapsed_jiffies = the amount of CPU time this process has taken divided by the total "time slots" the CPU has available
           # b) * 100 ... this turns it into a percentage
           # b) / num_processors ... this normalizes for the the number of processors in the system, so it reflects the amount of CPU power avaiable as a whole
-          p.recent_cpu_percentage = ((p.recent_cpu.to_f / elapsed_jiffies.to_f ) * 100.0) / ServerMetrics::SystemInfo.num_processors.to_f
+          p.recent_cpu_percentage = ((p.recent_cpu.to_f / elapsed_jiffies.to_f ) * 100.0) / num_processors.to_f
         end
       end
     end
