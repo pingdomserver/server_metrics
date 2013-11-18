@@ -35,6 +35,7 @@ class TestWithFixtures < Test::Unit::TestCase
 
   # First run we get size info
   def test_disk
+    ServerMetrics::Disk.any_instance.stubs("linux?").returns(true)
     c = ServerMetrics::Disk.new()
     fixture = fixtures(:disk)
     c.expects(:`).with("mount").returns(fixture.command("mount")).once
@@ -57,6 +58,7 @@ class TestWithFixtures < Test::Unit::TestCase
   end
 
   def test_disk_converts_use_percent_and_capacity_to_used_percent
+    ServerMetrics::Disk.any_instance.stubs("linux?").returns(true)
     response_varieties = []
     response_varieties << <<-eos
 Filesystem  Capacity
@@ -129,6 +131,7 @@ eos
   end
 
   def test_network
+    ServerMetrics::Network.any_instance.stubs("linux?").returns(true)
     fixture = fixtures(:network)
     c = ServerMetrics::Network.new()
     c.expects(:`).with("cat /proc/net/dev").returns(fixture.command("cat /proc/net/dev")).once
