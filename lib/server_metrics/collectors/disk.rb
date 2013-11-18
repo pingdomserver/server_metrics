@@ -24,7 +24,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     headers = header_line.split(/\s+/,num_columns)
     parsed_lines=[] # Each line will look like {"%iused" => "38%","Avail" => "289Gi", "Capacity=> "38%", "Filesystem"=> "/dev/disk0s2","Mounted => "/", "Size" => "465Gi", "Used" => "176Gi", "ifree" => "75812051", "iused"  => "46116178"}
 
-    @df_output[1..@df_output.size-2].each do |line|
+    @df_output[1..@df_output.size-1].each do |line|
       values=line.split(/\s+/,num_columns)
       parsed_lines<<Hash[headers.zip(values)]
     end
