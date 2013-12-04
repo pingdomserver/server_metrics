@@ -54,7 +54,7 @@ class ServerMetrics::Processes
   def calculate_processes
     num_processors = ServerMetrics::SystemInfo.num_processors
     ## 1. get a list of all processes
-    processes = Sys::ProcTable.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method and adds some behavior
+    processes = Sys::ProcTable.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
 
     ## 2. loop through each process and calculate the CPU time.
     # The CPU values returned by ProcTable are cumulative for the life of the process, which is not what we want.
@@ -117,8 +117,14 @@ class ServerMetrics::Processes
   # Relies on the /proc directory (/proc/timer_list). We need this because the process CPU utilization is measured in jiffies.
   # In order to calculate the process' % usage of total CPU resources, we need to know how many jiffies have passed.
   # Unfortunately, jiffies isn't a fixed value (it can vary between 100 and 250 per second), so we need to calculate it ourselves.
+  #
+  # if /proc/timer_list isn't available, fall back to the assumption of 100 jiffies/second (10 milliseconds/jiffy)
   def get_jiffies
-    `cat /proc/timer_list`.match(/^jiffies: (\d+)$/)[1].to_i
+    if File.exist?('/proc/timer_list')
+      `cat /proc/timer_list`.match(/^jiffies: (\d+)$/)[1].to_i
+    else
+      (Time.now.to_f*100).to_i
+    end
   end
 
   # for persisting to a file -- conforms to same basic API as the Collectors do.
