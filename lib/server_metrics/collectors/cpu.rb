@@ -6,8 +6,15 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
   class ProcStatError < Exception
   end
 
+  class ProcCpuInfoError < StandardError; end
+
   def build_report
     begin
+      unless(number_of_processors = memory(:number_of_processors))
+        number_of_processors = CpuStats.number_of_processors
+        remember(:number_of_processors => number_of_processors)
+      end
+
       stats = CpuStats.fetch
 
       if previous = memory(:cpu_stats)
@@ -19,20 +26,38 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
       remember(:cpu_stats => stats.to_h)
     rescue ProcStatError
       @error = "could not retrieve CPU stats from /proc/stat"
+    rescue ProcCpuInfoError
+      @error = "could not retrieve CPU info from /proc/cpuinfo"
     end
 
     ENV['LANG'] = 'C' # forcing english for parsing
     uptime_output = `uptime`
     matches = uptime_output.match(/load averages?: ([\d.]+),? ([\d.]+),? ([\d.]+)\Z/)
 
-    report(:last_minute => matches[1].to_f,
-           :last_five_minutes => matches[2].to_f,
-           :last_fifteen_minutes => matches[3].to_f)
+    report(:last_minute => matches[1].to_f / number_of_processors,
+           :last_five_minutes => matches[2].to_f / number_of_processors,
+           :last_fifteen_minutes => matches[3].to_f / number_of_processors)
   end
 
   # Helper class
   class CpuStats
     attr_accessor :user, :system, :idle, :iowait, :interrupts, :procs_running, :procs_blocked, :time, :steal
+
+    def self.number_of_processors
+      output = `cat /proc/cpuinfo | grep 'model name' | wc -l 2>&1`
+
+      if $? and !$?.success?
+        raise ProcCpuInfoError, output
+      end
+
+      if output =~ /(\d+)/
+        number_of_processors = $1.to_i
+      else
+        raise ProcCpuInfoError, output
+      end
+
+      number_of_processors
+    end
 
     def self.fetch
       output = `cat /proc/stat 2>&1`
