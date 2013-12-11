@@ -1,4 +1,5 @@
 require "time"
+require 'server_metrics/system_info'
 
 class ServerMetrics::Cpu < ServerMetrics::Collector
 
@@ -25,9 +26,11 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
     uptime_output = `uptime`
     matches = uptime_output.match(/load averages?: ([\d.]+),? ([\d.]+),? ([\d.]+)\Z/)
 
-    report(:last_minute => matches[1].to_f,
-           :last_five_minutes => matches[2].to_f,
-           :last_fifteen_minutes => matches[3].to_f)
+    number_of_processors = ServerMetrics::SystemInfo.num_processors
+
+    report(:last_minute => matches[1].to_f / number_of_processors,
+           :last_five_minutes => matches[2].to_f / number_of_processors,
+           :last_fifteen_minutes => matches[3].to_f / number_of_processors)
   end
 
   # Helper class

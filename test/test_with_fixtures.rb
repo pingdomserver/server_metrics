@@ -32,7 +32,6 @@ class TestWithFixtures < Test::Unit::TestCase
     assert c.data[:idle]
   end
 
-
   # First run we get size info
   def test_disk
     ServerMetrics::Disk.any_instance.stubs("linux?").returns(true)
