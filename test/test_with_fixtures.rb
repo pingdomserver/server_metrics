@@ -6,7 +6,6 @@ class TestWithFixtures < Test::Unit::TestCase
     fixture = fixtures(:cpu)
     c = ServerMetrics::Cpu.new()
 
-    ServerMetrics::Cpu::CpuStats.expects(:`).with("cat /proc/cpuinfo | grep 'model name' | wc -l 2>&1").returns("2").once
     ServerMetrics::Cpu::CpuStats.expects(:`).with("cat /proc/stat 2>&1").returns(fixture.command("cat /proc/stat 2>&1")).once
     c.expects(:`).with("uptime").returns(fixture.command("uptime")).once
 
