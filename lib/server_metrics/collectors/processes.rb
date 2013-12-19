@@ -90,7 +90,9 @@ class ServerMetrics::Processes
       }
       grouped[proc.comm][:count]    += 1
       grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage || 0
-      grouped[proc.comm][:memory]   += proc.rss.to_f / 1024.0
+      if proc.respond_to?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
+        grouped[proc.comm][:memory]   += proc.rss.to_f / 1024.0
+      end
       grouped[proc.comm][:cmdlines] << proc.cmdline if !grouped[proc.comm][:cmdlines].include?(proc.cmdline)
     end # processes.each
 
@@ -153,8 +155,9 @@ class ServerMetrics::Processes
     end
     def combined_cpu
       # best thread I've seen on cutime vs utime & cstime vs stime: https://www.ruby-forum.com/topic/93176
-      # trying the metric that doesn't include the consumption of child processes
-      utime + stime
+      # * cutime and cstime include CPUusage of child processes
+      # * utime and stime don't include CPU usage of child processes
+      (utime || 0) + (stime || 0)  # utime and stime aren't available on mac. Result is %cpu is 0 on mac.
     end
     # delegate everything else to ProcTable::Struct
     def method_missing(sym, *args, &block)
