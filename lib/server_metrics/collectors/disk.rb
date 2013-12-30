@@ -6,7 +6,8 @@
 class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   def build_report
-    @df_output = `df -h`.split("\n")
+    ENV['LANG'] = 'C' # forcing English for parsing
+    @df_output = `df -Pkh`.split("\n")
     @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev
 
     @devices.each do |device|
@@ -17,15 +18,12 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   # called from build_report for each device
   def get_sizes(device)
-    ENV['LANG'] = 'C' # forcing English for parsing
-
     header_line=@df_output.first
-    num_columns = header_line.include?("iused") ? 9 : 6 # Mac has extra columns
-    headers = header_line.split(/\s+/,num_columns)
+    headers = header_line.split(/\s+/,6) # limit to 6 columns - last column is "mounted on"
     parsed_lines=[] # Each line will look like {"%iused" => "38%","Avail" => "289Gi", "Capacity=> "38%", "Filesystem"=> "/dev/disk0s2","Mounted => "/", "Size" => "465Gi", "Used" => "176Gi", "ifree" => "75812051", "iused"  => "46116178"}
 
     @df_output[1..@df_output.size-1].each do |line|
-      values=line.split(/\s+/,num_columns)
+      values=line.split(/\s+/,6)
       parsed_lines<<Hash[headers.zip(values)]
     end
 

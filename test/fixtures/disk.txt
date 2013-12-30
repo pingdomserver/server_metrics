@@ -13,7 +13,7 @@ none on /var/lock type tmpfs (rw,noexec,nosuid,nodev)
 none on /lib/init/rw type tmpfs (rw,nosuid,mode=0755)
 nfsd on /proc/fs/nfsd type nfsd (rw)
 
-### `df -h` ubuntu
+### `df -Pkh` ubuntu
 Filesystem            Size  Used Avail Use% Mounted on
 /dev/xvda1            124G   84G   37G  70% /
 none                  7.9G  128K  7.9G   1% /dev

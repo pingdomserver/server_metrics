@@ -38,7 +38,7 @@ class TestWithFixtures < Test::Unit::TestCase
     c = ServerMetrics::Disk.new()
     fixture = fixtures(:disk)
     c.expects(:`).with("mount").returns(fixture.command("mount")).once
-    c.expects(:`).with("df -h").returns(fixture.command("df -h")).once
+    c.expects(:`).with("df -Pkh").returns(fixture.command("df -Pkh")).once
     c.expects(:`).with("cat /proc/diskstats").returns(fixture.command("cat /proc/diskstats")).once
     c.run
 
@@ -85,7 +85,7 @@ eos
       c = ServerMetrics::Disk.new()
       c.expects(:`).with("mount").returns(fixture.command("mount")).once
       c.expects(:`).with("cat /proc/diskstats").returns(fixture.command("cat /proc/diskstats")).once
-      c.expects(:`).with("df -h").returns(response)
+      c.expects(:`).with("df -Pkh").returns(response)
       c.run
 
       assert c.data['/dev/xvda1'][:used_percent]
@@ -97,7 +97,7 @@ eos
     c=test_disk
     fixture = fixtures(:disk)
     c.expects(:`).with("mount").returns(fixture.command("mount")).once
-    c.expects(:`).with("df -h").returns(fixture.command("df -h")).once
+    c.expects(:`).with("df -Pkh").returns(fixture.command("df -Pkh")).once
     c.expects(:`).with("cat /proc/diskstats").returns(fixture.command("cat /proc/diskstats", "ubuntu second run")).once
 
     Timecop.travel(60) do
