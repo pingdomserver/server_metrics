@@ -157,7 +157,7 @@ class ServerMetrics::Processes
       # best thread I've seen on cutime vs utime & cstime vs stime: https://www.ruby-forum.com/topic/93176
       # * cutime and cstime include CPUusage of child processes
       # * utime and stime don't include CPU usage of child processes
-      (utime || 0) + (stime || 0)  # utime and stime aren't available on mac. Result is %cpu is 0 on mac.
+      (cutime || 0) + (cstime || 0)  # utime and stime aren't available on mac. Result is %cpu is 0 on mac.
     end
     # delegate everything else to ProcTable::Struct
     def method_missing(sym, *args, &block)
