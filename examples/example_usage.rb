@@ -1,6 +1,5 @@
 require "rubygems"
-require File.dirname(__FILE__)+ "/lib/server_metrics"
-require "pry"
+require "server_metrics"
 
 class Harness
   attr_accessor :num_runs, :latest_run
@@ -30,7 +29,7 @@ harness = Harness.new
 harness.run
 sleep 1
 harness.run
-pp harness.latest_run
+puts harness.latest_run.inspect
 
 #puts "starting"
 #while(true) do

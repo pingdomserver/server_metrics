@@ -1,3 +1,7 @@
+## 0.0.8.8
+
+* fix for LVM-mapped disk IO stats
+
 ## 0.0.8.5
 
 * Mac per-process memory and per-process CPU reports 0s instead of throwing an exception (Mac only)

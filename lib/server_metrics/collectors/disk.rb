@@ -9,6 +9,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     ENV['LANG'] = 'C' # forcing English for parsing
     @df_output = `df -Pkh`.split("\n")
     @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev
+    @disk_stats = `cat /proc/diskstats`.split("\n")
 
     @devices.each do |device|
       get_sizes(device) # does its own reporting
@@ -77,28 +78,22 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   # * If there isn't an exact match but there are /proc/diskstats lines that are included in +dev+,
   #   returns the first matching line. This is needed as the mount output used to find the default device doesn't always
   #   match /proc/diskstats output.
-  # * If there are no matches but an LVM is used, returns the line matching "dm-0".
   def iostat(dev)
-    # if a LVM is used, `mount` output doesn't map to `/diskstats`. In this case, use dm-0 as the default device.
-    lvm = nil
-    retried = false
-    possible_devices = []
-    begin
-      %x(cat /proc/diskstats).split(/\n/).each do |line|
-        entry = Hash[*COLUMNS.zip(line.strip.split(/\s+/).collect { |v| Integer(v) rescue v }).flatten]
-        possible_devices << entry if dev.include?(entry['name'])
-        lvm = entry if (@default_device_used and 'dm-0'.include?(entry['name']))
-      end
-    rescue Errno::EPIPE
-      if retried
-        raise
-      else
-        retried = true
-        retry
-      end
+
+    # if this is a mapped device, translate it into the mapped name for lookup in @disk_stats
+    if dev =~ %r(^/dev/mapper/)
+      name_to_find = File.readlink(dev).split("/").last rescue dev
+    else
+      name_to_find = dev
     end
-    found_device = possible_devices.find { |entry| dev == entry['name'] } || possible_devices.first
-    return found_device || lvm
+
+    # narrow our @disk_stats down to a list of possible devices
+    possible_devices = @disk_stats.map { |line|
+      Hash[*COLUMNS.zip(line.strip.split(/\s+/).collect { |v| Integer(v) rescue v }).flatten]
+    }.select{|entry| name_to_find.include?(entry['name']) }
+
+    # return an exact match (preferred) or a partial match. If neither exist, nil will be returned
+    return possible_devices.find { |entry| name_to_find == entry['name'] } || possible_devices.first
   end
 
   def normalize_key(key)
