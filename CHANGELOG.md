@@ -1,3 +1,8 @@
+## 0.0.8.9
+
+* fix for top cpu-consuming processes in the process list
+
+
 ## 0.0.8.8
 
 * fix for LVM-mapped disk IO stats

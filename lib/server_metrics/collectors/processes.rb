@@ -36,7 +36,7 @@ class ServerMetrics::Processes
   def run
     @processes = calculate_processes # returns a hash
     top_memory = get_top_processes(:memory, 10) # returns an array
-    top_cpu = get_top_processes(:memory, 10) # returns an array
+    top_cpu = get_top_processes(:cpu, 10) # returns an array
 
     # combine the two and index by cmd. The indexing process will remove duplicates
     result = (top_cpu + top_memory).inject(Hash.new) {|temp_hash,process_hash| temp_hash[process_hash[:cmd]] = process_hash; temp_hash }
