@@ -90,7 +90,7 @@ class ServerMetrics::Processes
       }
       grouped[proc.comm][:count]    += 1
       grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage || 0
-      if proc.respond_to?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
+      if proc.has?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
         grouped[proc.comm][:memory]   += proc.rss.to_f / 1024.0
       end
       grouped[proc.comm][:cmdlines] << proc.cmdline if !grouped[proc.comm][:cmdlines].include?(proc.cmdline)
@@ -152,6 +152,10 @@ class ServerMetrics::Processes
     def initialize(proctable_struct)
       @pts=proctable_struct
       @recent_cpu = 0
+    end
+    # because apparently respond_to doesn't work through method_missing
+    def has?(method_name)
+      @pts.respond_to?(method_name)
     end
     def combined_cpu
       # best thread I've seen on cutime vs utime & cstime vs stime: https://www.ruby-forum.com/topic/93176
