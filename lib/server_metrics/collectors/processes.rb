@@ -2,7 +2,15 @@ require 'sys/proctable'
 require 'server_metrics/system_info'
 
 # Collects information on processes. Groups processes running under the same command, and sums up their CPU & memory usage.
-# CPU is calculated **since the last run**, and is a pecentage of overall CPU usage during the timeframe
+# CPU is calculated **since the last run**, and is a pecentage of overall CPU usage during the time span since the instance was last run.
+#
+# FAQ:
+#
+# 1) top and htop show PIDs. Why doesn't this class? This class aggregates processes. So if you have 10 apache processes running, it will report the total memory and CPU for all instances, and also report that there are 10 processes.
+#
+# 2) why are the process CPU numbers lower than [top|htop]? We normalize the CPU usage according to the number of CPUs your server has. Top and htop don't do that. So on a 8 CPU system, you'd expect these numbers to be almost an order of magnitude lower.
+#
+# 
 # http://www.linuxquestions.org/questions/linux-general-1/per-process-cpu-utilization-557577/
 class ServerMetrics::Processes
 
@@ -23,8 +31,8 @@ class ServerMetrics::Processes
   #     {
   #      :cmd => "mysqld",    # the command (without the path of arguments being run)
   #      :count    => 1,      # the number of these processes (grouped by the above command)
-  #      :cpu      => 34,     # the total CPU usage of the processes
-  #      :memory   => 2,      # the total memory usage of the processes
+  #      :cpu      => 34,     # the percentage of the total computational resources available (across all cores/CPU) that these processes are using.
+  #      :memory   => 2,      # the percentage of total memory that these processes are using.
   #      :cmd_lines => ["cmd args1", "cmd args2"]
   #     },
   #  'apache' =>
