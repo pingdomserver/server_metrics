@@ -13,6 +13,8 @@ require 'server_metrics/system_info'
 # 
 # http://www.linuxquestions.org/questions/linux-general-1/per-process-cpu-utilization-557577/
 class ServerMetrics::Processes
+  # most commmon - used if page size can't be retreived. units are bytes.
+  DEFAULT_PAGE_SIZE = 4096 
 
   def initialize(options={})
     @last_run
@@ -60,7 +62,6 @@ class ServerMetrics::Processes
   # and calculates CPU time for each process. Since CPU time has to be calculated relative to the last sample,
   # the collector has to be run twice to get CPU data.
   def calculate_processes
-    num_processors = ServerMetrics::SystemInfo.num_processors
     ## 1. get a list of all processes
     processes = Sys::ProcTable.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
 
@@ -99,7 +100,8 @@ class ServerMetrics::Processes
       grouped[proc.comm][:count]    += 1
       grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage || 0
       if proc.has?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
-        grouped[proc.comm][:memory]   += proc.rss.to_f / 1024.0
+        # converted to MB from bytes
+        grouped[proc.comm][:memory]   += (proc.rss.to_f*page_size) / 1024 / 1024
       end
       grouped[proc.comm][:cmdlines] << proc.cmdline if !grouped[proc.comm][:cmdlines].include?(proc.cmdline)
     end # processes.each
@@ -135,6 +137,18 @@ class ServerMetrics::Processes
     else
       (Time.now.to_f*100).to_i
     end
+  end
+  
+  # Sys::ProcTable.ps returns +rss+ in pages, not in bytes. 
+  # Returns the page size in bytes.
+  def page_size
+    @page_size ||= %x(getconf PAGESIZE).to_i
+  rescue
+    @page_size = DEFAULT_PAGE_SIZE
+  end
+  
+  def num_processors
+    @num_processors ||= ServerMetrics::SystemInfo.num_processors  
   end
 
   # for persisting to a file -- conforms to same basic API as the Collectors do.
