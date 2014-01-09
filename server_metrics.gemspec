@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Andre Lewis", "Derek Haynes", "Matt Rose"]
   spec.email         = ["support@scoutapp.com"]
   spec.description   = %q{Collect information about disks, memory, CPU, networks, and processes}
-
+  spec.summary       = %q{Used by the Scout agent, but also available as a stand-lone gem}
   spec.homepage      = "http://scoutapp.com"
   spec.license       = "MIT"
 
