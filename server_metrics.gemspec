@@ -6,10 +6,10 @@ require 'server_metrics/version'
 Gem::Specification.new do |spec|
   spec.name          = "server_metrics"
   spec.version       = ServerMetrics::VERSION
-  spec.authors       = ["Andre Lewis"]
-  spec.email         = ["andre@scoutapp.com"]
-  spec.description   = %q{Collect information about disks, memory, CPU, etc}
-  spec.summary       = %q{For use with the Scout agent}
+  spec.authors       = ["Andre Lewis", "Derek Haynes", "Matt Rose"]
+  spec.email         = ["support@scoutapp.com"]
+  spec.description   = %q{Collect information about disks, memory, CPU, networks, and processes}
+
   spec.homepage      = "http://scoutapp.com"
   spec.license       = "MIT"
 
