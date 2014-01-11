@@ -1,4 +1,5 @@
 require 'sys/proctable'
+require 'server_metrics/lib/proctable_lite' # used on linux
 require 'server_metrics/system_info'
 
 # Collects information on processes. Groups processes running under the same command, and sums up their CPU & memory usage.
@@ -20,6 +21,7 @@ class ServerMetrics::Processes
     @last_run
     @last_jiffies
     @last_process_list
+    @proc_table_klass = ServerMetrics::SystemInfo.os =~ /linux/ ? SysLite::ProcTable : Sys::ProcTable # this is used in calculate_processes. On Linux, use our optimized version
   end
 
 
@@ -63,7 +65,7 @@ class ServerMetrics::Processes
   # the collector has to be run twice to get CPU data.
   def calculate_processes
     ## 1. get a list of all processes
-    processes = Sys::ProcTable.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
+    processes = @proc_table_klass.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
 
     ## 2. loop through each process and calculate the CPU time.
     # The CPU values returned by ProcTable are cumulative for the life of the process, which is not what we want.

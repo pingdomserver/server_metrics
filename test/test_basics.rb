@@ -84,7 +84,7 @@ class TestBasics < Test::Unit::TestCase
     p.instance_variable_set '@last_run', last_run
     p.instance_variable_set '@last_process_list', "bogus value"
 
-    assert_equal({:last_run=>last_run,:last_process_list=>"bogus value"}, p.to_hash)
+    assert_equal({:last_run=>last_run,:last_jiffies=>nil,:last_process_list=>"bogus value"}, p.to_hash)
   end
 
   def test_processes_from_hash

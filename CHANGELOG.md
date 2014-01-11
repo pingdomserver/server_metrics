@@ -1,3 +1,7 @@
+## 0.1.0
+
+* Optimization for collecting processes on Linux
+
 ## 0.0.9.0
 
 * Reporting process memory in MB, not in page size. 
