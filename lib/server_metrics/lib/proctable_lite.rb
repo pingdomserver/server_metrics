@@ -20,6 +20,9 @@ module SysLite
 
     # @mem_total = IO.read("/proc/meminfo")[/MemTotal.*/].split[1].to_i * 1024 rescue nil
     # @boot_time = IO.read("/proc/stat")[/btime.*/].split.last.to_i rescue nil
+    
+    # Handles a special case - kthreadd generates many children. these are reported w/the same comm, kthreadd.
+    @kthreadd_pid = nil
 
     @fields = [
         'cmdline',     # Complete command line
@@ -107,7 +110,6 @@ module SysLite
     def self.ps(pid=nil)
       array  = block_given? ? nil : []
       struct = nil
-
       raise TypeError unless pid.is_a?(Fixnum) if pid
 
       Dir.foreach("/proc"){ |file|
@@ -172,9 +174,9 @@ module SysLite
         stat = stat.split
 
         struct.pid         = stat[0].to_i
-        struct.comm        = stat[1].tr('()','') # Remove parens
+        struct.comm        = stat[1].tr('()','') # Remove parens      
         # struct.state       = stat[2]
-        #        struct.ppid        = stat[3].to_i
+        struct.ppid        = stat[3].to_i
         #        struct.pgrp        = stat[4].to_i
         #        struct.session     = stat[5].to_i
         #        struct.tty_nr      = stat[6].to_i
@@ -233,6 +235,8 @@ module SysLite
         # Manually calculate CPU and memory usage
         # struct.pctcpu = get_pctcpu(struct.utime, struct.starttime)
         # struct.pctmem = get_pctmem(struct.rss)
+        
+        struct.comm = get_comm_group_name(struct)
 
         struct.freeze # This is read-only data
 
@@ -261,6 +265,31 @@ module SysLite
     end
 
     private
+    
+    # kthreadd has many children that generate unique comm's - group these together. 
+    #
+    # examples:
+    #         watchdog/5  
+    #         kworker/10:1 
+    #         kworker/10:1H
+    #         ksoftirqd/8 
+    #         migration/10 
+    #         scsi_eh_2 
+    #         flush-9:2 
+    #         kswapd0
+    def self.get_comm_group_name(struct)
+      # set the kthreadd pid, if not set yet.
+      if @kthreadd_pid.nil? and struct.comm == 'kthreadd'
+        @kthreadd_pid = struct.pid
+      end
+      
+      # rename to 'kthreadd' if the parent id == kthreadd
+      if @kthreadd_pid == struct.ppid
+        'kthreadd'
+      else
+        struct.comm
+      end
+    end
 
     # Calculate the percentage of memory usage for the given process.
     #
