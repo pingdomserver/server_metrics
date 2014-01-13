@@ -174,7 +174,8 @@ module SysLite
         stat = stat.split
 
         struct.pid         = stat[0].to_i
-        struct.comm        = stat[1].tr('()','') # Remove parens      
+        # Remove parens. Note this could be overwritten in #get_comm_group_name.
+        struct.comm        = stat[1].tr('()','')
         # struct.state       = stat[2]
         struct.ppid        = stat[3].to_i
         #        struct.pgrp        = stat[4].to_i
