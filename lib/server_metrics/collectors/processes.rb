@@ -35,17 +35,7 @@ class ServerMetrics::Processes
 
   def run
     @processes = calculate_processes # returns a hash
-    top_memory = get_top_processes(:memory, 10) # returns an array
-    top_cpu = get_top_processes(:cpu, 10) # returns an array
-
-    # combine the two and index by cmd. The indexing process will remove duplicates
-    result = (top_cpu + top_memory).inject(Hash.new) {|temp_hash,process_hash| temp_hash[process_hash[:cmd]] = process_hash; temp_hash }
-
-    # An alternate approach is to return an array with two separate arrays. More explicit, but more verbose.
-    #{
-    #    :top_memory => get_top_processes(:memory, 10),
-    #    :top_cpu => get_top_processes(:cpu, 10)
-    #}
+    @processes.keys.inject(@processes) { |processes, key| processes[key][:cmd] = key; processes }
   end
 
   # called from run(). This method lists all the processes running on the server, groups them by command,
@@ -107,13 +97,6 @@ class ServerMetrics::Processes
     @last_run = now
 
     grouped
-  end
-
-  # Can only be called after @processes is set. Based on @processes, calcuates the top {num} processes, as ordered by {order_by}.
-  # Returns an array of hashes:
-  # [{:cmd=>"ruby", :cpu=>30.0, :memory=>100, :uid=>1,:cmdlines=>[]}, {:cmd => ...} ]
-  def get_top_processes(order_by, num)
-    @processes.map { |key, hash| {:cmd => key}.merge(hash) }.sort { |a, b| a[order_by] <=> b[order_by] }.reverse[0...num]
   end
 
   # Relies on the /proc directory (/proc/timer_list). We need this because the process CPU utilization is measured in jiffies.
