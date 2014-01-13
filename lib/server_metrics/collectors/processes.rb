@@ -1,15 +1,27 @@
 require 'sys/proctable'
+require 'server_metrics/lib/proctable_lite' # used on linux
 require 'server_metrics/system_info'
 
 # Collects information on processes. Groups processes running under the same command, and sums up their CPU & memory usage.
-# CPU is calculated **since the last run**, and is a pecentage of overall CPU usage during the timeframe
+# CPU is calculated **since the last run**, and is a pecentage of overall CPU usage during the time span since the instance was last run.
+#
+# FAQ:
+#
+# 1) top and htop show PIDs. Why doesn't this class? This class aggregates processes. So if you have 10 apache processes running, it will report the total memory and CPU for all instances, and also report that there are 10 processes.
+#
+# 2) why are the process CPU numbers lower than [top|htop]? We normalize the CPU usage according to the number of CPUs your server has. Top and htop don't do that. So on a 8 CPU system, you'd expect these numbers to be almost an order of magnitude lower.
+#
+# 
 # http://www.linuxquestions.org/questions/linux-general-1/per-process-cpu-utilization-557577/
 class ServerMetrics::Processes
+  # most commmon - used if page size can't be retreived. units are bytes.
+  DEFAULT_PAGE_SIZE = 4096 
 
   def initialize(options={})
     @last_run
     @last_jiffies
     @last_process_list
+    @proc_table_klass = ServerMetrics::SystemInfo.os =~ /linux/ ? SysLite::ProcTable : Sys::ProcTable # this is used in calculate_processes. On Linux, use our optimized version
   end
 
 
@@ -23,8 +35,8 @@ class ServerMetrics::Processes
   #     {
   #      :cmd => "mysqld",    # the command (without the path of arguments being run)
   #      :count    => 1,      # the number of these processes (grouped by the above command)
-  #      :cpu      => 34,     # the total CPU usage of the processes
-  #      :memory   => 2,      # the total memory usage of the processes
+  #      :cpu      => 34,     # the percentage of the total computational resources available (across all cores/CPU) that these processes are using.
+  #      :memory   => 2,      # the percentage of total memory that these processes are using.
   #      :cmd_lines => ["cmd args1", "cmd args2"]
   #     },
   #  'apache' =>
@@ -42,9 +54,8 @@ class ServerMetrics::Processes
   # and calculates CPU time for each process. Since CPU time has to be calculated relative to the last sample,
   # the collector has to be run twice to get CPU data.
   def calculate_processes
-    num_processors = ServerMetrics::SystemInfo.num_processors
     ## 1. get a list of all processes
-    processes = Sys::ProcTable.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
+    processes = @proc_table_klass.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
 
     ## 2. loop through each process and calculate the CPU time.
     # The CPU values returned by ProcTable are cumulative for the life of the process, which is not what we want.
@@ -80,8 +91,9 @@ class ServerMetrics::Processes
       }
       grouped[proc.comm][:count]    += 1
       grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage || 0
-      if proc.respond_to?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
-        grouped[proc.comm][:memory]   += proc.rss.to_f / 1024.0
+      if proc.has?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
+        # converted to MB from bytes
+        grouped[proc.comm][:memory]   += (proc.rss.to_f*page_size) / 1024 / 1024
       end
       grouped[proc.comm][:cmdlines] << proc.cmdline if !grouped[proc.comm][:cmdlines].include?(proc.cmdline)
     end # processes.each
@@ -111,6 +123,18 @@ class ServerMetrics::Processes
       (Time.now.to_f*100).to_i
     end
   end
+  
+  # Sys::ProcTable.ps returns +rss+ in pages, not in bytes. 
+  # Returns the page size in bytes.
+  def page_size
+    @page_size ||= %x(getconf PAGESIZE).to_i
+  rescue
+    @page_size = DEFAULT_PAGE_SIZE
+  end
+  
+  def num_processors
+    @num_processors ||= ServerMetrics::SystemInfo.num_processors  
+  end
 
   # for persisting to a file -- conforms to same basic API as the Collectors do.
   # why not just use marshall? This is a lot more manageable written to the Scout agent's history file.
@@ -135,6 +159,10 @@ class ServerMetrics::Processes
     def initialize(proctable_struct)
       @pts=proctable_struct
       @recent_cpu = 0
+    end
+    # because apparently respond_to doesn't work through method_missing
+    def has?(method_name)
+      @pts.respond_to?(method_name)
     end
     def combined_cpu
       # best thread I've seen on cutime vs utime & cstime vs stime: https://www.ruby-forum.com/topic/93176

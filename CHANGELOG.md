@@ -1,11 +1,19 @@
+## 0.1.0
+
+* Optimization for collecting processes on Linux
+
+## 0.0.9.0
+
+* Reporting process memory in MB, not in page size. 
+* When determining process cpu usage, caching number of processors.
+
 ## 0.0.8.9
 
-* fix for top cpu-consuming processes in the process list
-
+* Fix for top cpu-consuming processes in the process list
 
 ## 0.0.8.8
 
-* fix for LVM-mapped disk IO stats
+* Fix for LVM-mapped disk IO stats
 
 ## 0.0.8.5
 
@@ -13,8 +21,8 @@
 
 ## 0.0.8.4
 
-* normalize load (last minute, etc) by number of CPUs. This keeps the metrics in sync with Scout's server load plugin.
+* Normalize load (last minute, etc) by number of CPUs. This keeps the metrics in sync with Scout's server load plugin.
 
 ## 0.0.8.3
 
-* fall back to assumption of 100 jiffies/sec if /proc/timer_list isn't available
+* Fall back to assumption of 100 jiffies/sec if /proc/timer_list isn't available
