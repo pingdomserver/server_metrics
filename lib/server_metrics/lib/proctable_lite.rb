@@ -21,8 +21,20 @@ module SysLite
     # @mem_total = IO.read("/proc/meminfo")[/MemTotal.*/].split[1].to_i * 1024 rescue nil
     # @boot_time = IO.read("/proc/stat")[/btime.*/].split.last.to_i rescue nil
     
-    # Handles a special case - kthreadd generates many children. these are reported w/the same comm, kthreadd.
-    @kthreadd_pid = nil
+    # Handles a special case on Ubuntu - kthreadd generates many children (200+). 
+    # These are aggregated together and reported as a single process, kthreadd.
+    #  
+    # Examples child process names:
+    #
+    # watchdog/5  
+    # kworker/10:1 
+    # kworker/10:1H
+    # ksoftirqd/8 
+    # migration/10 
+    # scsi_eh_2 
+    # flush-9:2 
+    # kswapd0
+    @kthreadd = nil # the ProcTableStruct representing kthreadd
 
     @fields = [
         'cmdline',     # Complete command line
@@ -237,8 +249,17 @@ module SysLite
         # struct.pctcpu = get_pctcpu(struct.utime, struct.starttime)
         # struct.pctmem = get_pctmem(struct.rss)
         
-        struct.comm = get_comm_group_name(struct)
-
+        # don't report kthreadd chidren individually - aggregate into the parent.
+        if kthreadd_child?(struct.ppid)
+          @kthreadd.utime += struct.utime
+          @kthreadd.stime += struct.stime
+          @kthreadd.rss += struct.rss
+          next
+        elsif struct.comm == 'kthreadd'
+          @kthreadd = struct
+          next
+        end
+        
         struct.freeze # This is read-only data
 
         if block_given?
@@ -248,7 +269,12 @@ module SysLite
         end
       }
 
-      pid ? struct : array
+      if pid
+        struct
+      else 
+        array << @kthreadd if @kthreadd # not added when iterating.
+        array
+      end
     end
 
     # Returns an array of fields that each ProcTableStruct will contain. This
@@ -267,29 +293,9 @@ module SysLite
 
     private
     
-    # kthreadd has many children that generate unique comm's - group these together. 
-    #
-    # examples:
-    #         watchdog/5  
-    #         kworker/10:1 
-    #         kworker/10:1H
-    #         ksoftirqd/8 
-    #         migration/10 
-    #         scsi_eh_2 
-    #         flush-9:2 
-    #         kswapd0
-    def self.get_comm_group_name(struct)
-      # set the kthreadd pid, if not set yet.
-      if @kthreadd_pid.nil? and struct.comm == 'kthreadd'
-        @kthreadd_pid = struct.pid
-      end
-      
-      # rename to 'kthreadd' if the parent id == kthreadd
-      if @kthreadd_pid == struct.ppid
-        'kthreadd'
-      else
-        struct.comm
-      end
+    # True if the process's parent process id is kthreadd.
+    def self.kthreadd_child?(ppid)
+      @kthreadd and @kthreadd.pid == ppid
     end
 
     # Calculate the percentage of memory usage for the given process.
