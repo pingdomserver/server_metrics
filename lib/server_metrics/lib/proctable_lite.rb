@@ -20,6 +20,21 @@ module SysLite
 
     # @mem_total = IO.read("/proc/meminfo")[/MemTotal.*/].split[1].to_i * 1024 rescue nil
     # @boot_time = IO.read("/proc/stat")[/btime.*/].split.last.to_i rescue nil
+    
+    # Handles a special case on Ubuntu - kthreadd generates many children (200+). 
+    # These are aggregated together and reported as a single process, kthreadd.
+    #  
+    # Examples child process names:
+    #
+    # watchdog/5  
+    # kworker/10:1 
+    # kworker/10:1H
+    # ksoftirqd/8 
+    # migration/10 
+    # scsi_eh_2 
+    # flush-9:2 
+    # kswapd0
+    @kthreadd = nil # the ProcTableStruct representing kthreadd
 
     @fields = [
         'cmdline',     # Complete command line
@@ -107,7 +122,6 @@ module SysLite
     def self.ps(pid=nil)
       array  = block_given? ? nil : []
       struct = nil
-
       raise TypeError unless pid.is_a?(Fixnum) if pid
 
       Dir.foreach("/proc"){ |file|
@@ -172,9 +186,10 @@ module SysLite
         stat = stat.split
 
         struct.pid         = stat[0].to_i
-        struct.comm        = stat[1].tr('()','') # Remove parens
+        # Remove parens. Note this could be overwritten in #get_comm_group_name.
+        struct.comm        = stat[1].tr('()','')
         # struct.state       = stat[2]
-        #        struct.ppid        = stat[3].to_i
+        struct.ppid        = stat[3].to_i
         #        struct.pgrp        = stat[4].to_i
         #        struct.session     = stat[5].to_i
         #        struct.tty_nr      = stat[6].to_i
@@ -233,7 +248,18 @@ module SysLite
         # Manually calculate CPU and memory usage
         # struct.pctcpu = get_pctcpu(struct.utime, struct.starttime)
         # struct.pctmem = get_pctmem(struct.rss)
-
+        
+        # don't report kthreadd chidren individually - aggregate into the parent.
+        if kthreadd_child?(struct.ppid)
+          @kthreadd.utime += struct.utime
+          @kthreadd.stime += struct.stime
+          @kthreadd.rss += struct.rss
+          next
+        elsif !@kthreadd and %w(kthread kthreadd).include?(struct.comm)
+          @kthreadd = struct
+          next
+        end
+        
         struct.freeze # This is read-only data
 
         if block_given?
@@ -243,7 +269,12 @@ module SysLite
         end
       }
 
-      pid ? struct : array
+      if pid
+        struct
+      else 
+        array << @kthreadd if @kthreadd # not added when iterating.
+        array
+      end
     end
 
     # Returns an array of fields that each ProcTableStruct will contain. This
@@ -261,6 +292,11 @@ module SysLite
     end
 
     private
+    
+    # True if the process's parent process id is kthreadd.
+    def self.kthreadd_child?(ppid)
+      @kthreadd and @kthreadd.pid == ppid
+    end
 
     # Calculate the percentage of memory usage for the given process.
     #

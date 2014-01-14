@@ -1,3 +1,11 @@
+## 1.0.2
+
+* Also grouping under kthread (one d vs. 2 ds)
+
+## 1.0.1
+
+* Grouping kthreadd's children together under the comm "kthreadd"
+
 ## 0.1.0
 
 * Optimization for collecting processes on Linux
