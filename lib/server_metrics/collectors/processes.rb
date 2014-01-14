@@ -25,12 +25,8 @@ class ServerMetrics::Processes
   end
 
 
-  # This is the main method to call. It returns a hash of processes, keyed by the executable name.
-  # Processes are returned either because they are a top 10 CPU consumer, or a top 10 memory consumer.
+  # This is the main method to call. It returns a hash of processes, keyed by the executable name.   
   #
-  # The exact number or processes returned depends on the overlap between the two lists (cpu and memory consumers).
-  # The list will always be between 10 and 20 items long.
-
   # {'mysqld' =>
   #     {
   #      :cmd => "mysqld",    # the command (without the path of arguments being run)
