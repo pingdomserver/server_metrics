@@ -25,7 +25,7 @@ class ServerMetrics::Processes
   end
 
 
-  # This is the main method to call. It returns a hash of processes, keyed by the executable name.   
+  # This is the main method to call. It returns a hash of processes, keyed by the executable name.
   #
   # {'mysqld' =>
   #     {
