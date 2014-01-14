@@ -107,17 +107,13 @@ class ServerMetrics::Processes
     grouped
   end
 
-  # Relies on the /proc directory (/proc/timer_list). We need this because the process CPU utilization is measured in jiffies.
+  # We need this because the process CPU utilization is measured in jiffies.
   # In order to calculate the process' % usage of total CPU resources, we need to know how many jiffies have passed.
-  # Unfortunately, jiffies isn't a fixed value (it can vary between 100 and 250 per second), so we need to calculate it ourselves.
   #
-  # if /proc/timer_list isn't available, fall back to the assumption of 100 jiffies/second (10 milliseconds/jiffy)
+  # While jiffies isn't a fixed value (it can vary between 100 and 250 per second),
+  # we assume it is 100 jiffies/second (10 milliseconds/jiffy) because that is most common.
   def get_jiffies
-    if File.exist?('/proc/timer_list')
-      `cat /proc/timer_list`.match(/^jiffies: (\d+)$/)[1].to_i
-    else
-      (Time.now.to_f*100).to_i
-    end
+    (Time.now.to_f*100).to_i
   end
   
   # Sys::ProcTable.ps returns +rss+ in pages, not in bytes. 

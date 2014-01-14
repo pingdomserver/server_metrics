@@ -1,3 +1,7 @@
+## 1.0.3
+
+* Assuming 100 jiffies/second vs. reading from /proc/timer_list
+
 ## 1.0.2
 
 * Also grouping under kthread (one d vs. 2 ds)
