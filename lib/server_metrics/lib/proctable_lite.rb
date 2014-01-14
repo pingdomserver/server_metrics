@@ -255,7 +255,7 @@ module SysLite
           @kthreadd.stime += struct.stime
           @kthreadd.rss += struct.rss
           next
-        elsif struct.comm == 'kthreadd'
+        elsif !@kthreadd and %w(kthread kthreadd).include?(struct.comm)
           @kthreadd = struct
           next
         end
