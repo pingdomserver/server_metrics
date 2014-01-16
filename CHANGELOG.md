@@ -1,3 +1,10 @@
+## 1.1.0
+
+* sys/proctable is no longer a dependency in the gemspec.
+* Linux systems with the /proc filesystem will return all process metrics
+* other systems with sys/proctable installed will try to use sys/proctable, wnd will generally return a list of process names and counts (but no memory/cpu)
+* all other systems: no process info returned
+
 ## 1.0.2
 
 * Also grouping under kthread (one d vs. 2 ds)

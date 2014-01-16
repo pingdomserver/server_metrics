@@ -1,5 +1,9 @@
-require 'sys/proctable'
-require 'server_metrics/lib/proctable_lite' # used on linux
+begin
+  require 'sys/proctable'
+rescue LoadError
+  # we'll use SysLite::ProcTable
+end
+require 'server_metrics/lib/proctable_lite'
 require 'server_metrics/system_info'
 
 # Collects information on processes. Groups processes running under the same command, and sums up their CPU & memory usage.
@@ -11,17 +15,30 @@ require 'server_metrics/system_info'
 #
 # 2) why are the process CPU numbers lower than [top|htop]? We normalize the CPU usage according to the number of CPUs your server has. Top and htop don't do that. So on a 8 CPU system, you'd expect these numbers to be almost an order of magnitude lower.
 #
-# 
 # http://www.linuxquestions.org/questions/linux-general-1/per-process-cpu-utilization-557577/
+#
+# SYSTEM COMPATIBILITY NOTES
+#
+# * on Linux systems with the /proc filesystem: will return all process metrics
+# * on other systems with sys/proctable installed: will generally return a process list and counts
+# * everywhere else: no process info returned
+#
+#
+#
 class ServerMetrics::Processes
-  # most commmon - used if page size can't be retreived. units are bytes.
+  # most common - used if page size can't be retrieved. units are bytes.
   DEFAULT_PAGE_SIZE = 4096 
 
   def initialize(options={})
     @last_run
     @last_jiffies
     @last_process_list
-    @proc_table_klass = ServerMetrics::SystemInfo.os =~ /linux/ ? SysLite::ProcTable : Sys::ProcTable # this is used in calculate_processes. On Linux, use our optimized version
+    if ServerMetrics::SystemInfo.os =~ /linux/
+      @proc_table_klass = SysLite::ProcTable
+    elsif Object.const_defined?('Sys') && Sys.const_defined?('ProcTable')
+      @proc_table_klass = Sys::ProcTable
+    end
+
   end
 
 
@@ -40,10 +57,14 @@ class ServerMetrics::Processes
   #      ....
   #     }
   # }
-
+  #
   def run
-    @processes = calculate_processes # returns a hash
-    @processes.keys.inject(@processes) { |processes, key| processes[key][:cmd] = key; processes }
+    if @proc_table_klass
+      @processes = calculate_processes # returns a hash
+      @processes.keys.inject(@processes) { |processes, key| processes[key][:cmd] = key; processes }
+    else
+      @processes = {}
+    end
   end
 
   # called from run(). This method lists all the processes running on the server, groups them by command,

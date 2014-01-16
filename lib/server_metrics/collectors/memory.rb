@@ -60,15 +60,6 @@ class ServerMetrics::Memory < ServerMetrics::Collector
       report_data[:swap_used_percent] = swap_percent_used
     end
     @data = report_data
-
-  rescue Exception => e
-    if e.message =~ /No such file or directory/
-      error('Unable to find /proc/meminfo',%Q(Unable to find /proc/meminfo. Please ensure your operationg system supports procfs:
-         http://en.wikipedia.org/wiki/Procfs)
-      )
-    else
-      raise
-    end
   end
 
   # Parses top output. Does not report swap usage.
