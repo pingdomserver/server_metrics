@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Handling Infinite and NaN Process CPU Usage.
+
 ## 1.1.0
 
 * sys/proctable is no longer a dependency in the gemspec.
