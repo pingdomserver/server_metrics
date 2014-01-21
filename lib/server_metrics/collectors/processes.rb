@@ -84,15 +84,7 @@ class ServerMetrics::Processes
       elapsed_jiffies = current_jiffies - @last_jiffies
       if elapsed_time >= 1
         processes.each do |p|
-          if last_cpu = @last_process_list[p.pid]
-            p.recent_cpu = p.combined_cpu - last_cpu
-          else
-            p.recent_cpu = p.combined_cpu # this process wasn't around last time, so just use the cumulative CPU time for its existence so far
-          end
-          # a) p.recent_cpu / elapsed_jiffies = the amount of CPU time this process has taken divided by the total "time slots" the CPU has available
-          # b) * 100 ... this turns it into a percentage
-          # b) / num_processors ... this normalizes for the the number of processors in the system, so it reflects the amount of CPU power avaiable as a whole
-          p.recent_cpu_percentage = ((p.recent_cpu.to_f / elapsed_jiffies.to_f ) * 100.0) / num_processors.to_f
+          p.set_recent_cpu(@last_process_list[p.pid],elapsed_jiffies,num_processors)
         end
       end
     end
@@ -107,7 +99,7 @@ class ServerMetrics::Processes
           :cmdlines => []
       }
       grouped[proc.comm][:count]    += 1
-      grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage || 0
+      grouped[proc.comm][:cpu]      += proc.recent_cpu_percentage
       if proc.has?(:rss) # mac doesn't return rss. Mac returns 0 for memory usage
         # converted to MB from bytes
         grouped[proc.comm][:memory]   += (proc.rss.to_f*page_size) / 1024 / 1024
@@ -173,16 +165,36 @@ class ServerMetrics::Processes
       @pts=proctable_struct
       @recent_cpu = 0
     end
+    
     # because apparently respond_to doesn't work through method_missing
     def has?(method_name)
       @pts.respond_to?(method_name)
     end
+    
+    def set_recent_cpu(last_cpu,elapsed_jiffies,num_processors)
+      if last_cpu
+        self.recent_cpu = combined_cpu - last_cpu
+      else
+        self.recent_cpu = combined_cpu # this process wasn't around last time, so just use the cumulative CPU time for its existence so far
+      end
+      # a) self.recent_cpu / elapsed_jiffies = the amount of CPU time this process has taken divided by the total "time slots" the CPU has available
+      # b) * 100 ... this turns it into a percentage
+      # b) / num_processors ... this normalizes for the the number of processors in the system, so it reflects the amount of CPU power avaiable as a whole
+      self.recent_cpu_percentage = ((recent_cpu.to_f / elapsed_jiffies.to_f ) * 100.0) / num_processors.to_f
+    end
+    
+    def recent_cpu_percentage
+      # On RaspberryPi, cpu % has been reported as both Infinite and NaN. Instead, 0 is reported.
+      (@recent_cpu_percentage and !@recent_cpu_percentage.infinite? and !@recent_cpu_percentage.nan?) ? @recent_cpu_percentage : 0
+    end
+    
     def combined_cpu
       # best thread I've seen on cutime vs utime & cstime vs stime: https://www.ruby-forum.com/topic/93176
       # * cutime and cstime include CPUusage of child processes
       # * utime and stime don't include CPU usage of child processes
       (utime || 0) + (stime || 0)  # utime and stime aren't available on mac. Result is %cpu is 0 on mac.
     end
+    
     # delegate everything else to ProcTable::Struct
     def method_missing(sym, *args, &block)
       @pts.send sym, *args, &block
