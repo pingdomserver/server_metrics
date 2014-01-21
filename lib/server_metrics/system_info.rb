@@ -21,10 +21,10 @@ module ServerMetrics
         `sysctl -n hw.ncpu`.to_i
       elsif os =~ /linux/
         lines = `cat /proc/cpuinfo`.split("\n")
-        lines.grep(/^processor\s*:/).size
+        lines.grep(/^processor\s*:/i).size
       end
     rescue
-      nil
+      1
     end
 
     def self.timezone

@@ -1,6 +1,7 @@
 ## 1.1.1
 
 * Handling Infinite and NaN Process CPU Usage.
+* Case-insensitive process count grep, returning 1 processor vs. nil on rescue.
 
 ## 1.1.0
 
