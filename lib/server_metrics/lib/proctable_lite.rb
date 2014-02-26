@@ -36,78 +36,78 @@ module SysLite
     # kswapd0
     @kthreadd = nil # the ProcTableStruct representing kthreadd
 
+    # the commented-out lines exist in proctable, but aren't used in proctable_lite.
     @fields = [
         'cmdline',     # Complete command line
-        'cwd',         # Current working directory
+        #'cwd',         # Current working directory
         'environ',     # Environment
-        'exe',         # Actual pathname of the executed command
+        #'exe',         # Actual pathname of the executed command
         'fd',          # File descriptors open by process
-        'root',        # Root directory of process
+        #'root',        # Root directory of process
         'pid',         # Process ID
         'comm',        # Filename of executable
-        'state',       # Single character state abbreviation
+        #'state',       # Single character state abbreviation
         'ppid',        # Parent process ID
-        'pgrp',        # Process group
-        'session',     # Session ID
-        'tty_nr',      # TTY (terminal) associated with the process
-        'tpgid',       # Group ID of the TTY
-        'flags',       # Kernel flags
-        'minflt',      # Number of minor faults
-        'cminflt',     # Number of minor faults of waited-for children
-        'majflt',      # Number of major faults
-        'cmajflt',     # Number of major faults of waited-for children
+        #'pgrp',        # Process group
+        #'session',     # Session ID
+        #'tty_nr',      # TTY (terminal) associated with the process
+        #'tpgid',       # Group ID of the TTY
+        #'flags',       # Kernel flags
+        #'minflt',      # Number of minor faults
+        #'cminflt',     # Number of minor faults of waited-for children
+        #'majflt',      # Number of major faults
+        #'cmajflt',     # Number of major faults of waited-for children
         'utime',       # Number of user mode jiffies
         'stime',       # Number of kernel mode jiffies
-        'cutime',      # Number of children's user mode jiffies
-        'cstime',      # Number of children's kernel mode jiffies
-        'priority',    # Nice value plus 15
-        'nice',        # Nice value
-        'itrealvalue', # Time in jiffies before next SIGALRM
-        'starttime',   # Time in jiffies since system boot
-        'vsize',       # Virtual memory size in bytes
-        'rss',         # Resident set size
-        'rlim',        # Current limit on the rss in bytes
-        'startcode',   # Address above which program text can run
-        'endcode',     # Address below which program text can run
-        'startstack',  # Address of the startstack
-        'kstkesp',     # Kernel stack page address
-        'kstkeip',     # Kernel instruction pointer
-        'signal',      # Bitmap of pending signals
-        'blocked',     # Bitmap of blocked signals
-        'sigignore',   # Bitmap of ignored signals
-        'sigcatch',    # Bitmap of caught signals
-        'wchan',       # Channel in which the process is waiting
-        'nswap',       # Number of pages swapped
-        'cnswap',      # Cumulative nswap for child processes
-        'exit_signal', # Signal to be sent to parent when process dies
-        'processor',   # CPU number last executed on
-        'rt_priority', # Real time scheduling priority
-        'policy',      # Scheduling policy
-        'name',        # Process name
-        'uid',         # Real user ID
-        'euid',        # Effective user ID
-        'gid',         # Real group ID
-        'egid',        # Effective group ID
-        'pctcpu',     # Percent of CPU usage (custom field)
-        'pctmem'      # Percent of Memory usage (custom field)
+        #'cutime',      # Number of children's user mode jiffies
+        #'cstime',      # Number of children's kernel mode jiffies
+        #'priority',    # Nice value plus 15
+        #'nice',        # Nice value
+        #'itrealvalue', # Time in jiffies before next SIGALRM
+        #'starttime',   # Time in jiffies since system boot
+        #'vsize',       # Virtual memory size in bytes
+        'rss'         # Resident set size
+        #'rlim',        # Current limit on the rss in bytes
+        #'startcode',   # Address above which program text can run
+        #'endcode',     # Address below which program text can run
+        #'startstack',  # Address of the startstack
+        #'kstkesp',     # Kernel stack page address
+        #'kstkeip',     # Kernel instruction pointer
+        #'signal',      # Bitmap of pending signals
+        #'blocked',     # Bitmap of blocked signals
+        #'sigignore',   # Bitmap of ignored signals
+        #'sigcatch',    # Bitmap of caught signals
+        #'wchan',       # Channel in which the process is waiting
+        #'nswap',       # Number of pages swapped
+        #'cnswap',      # Cumulative nswap for child processes
+        #'exit_signal', # Signal to be sent to parent when process dies
+        #'processor',   # CPU number last executed on
+        #'rt_priority', # Real time scheduling priority
+        #'policy',      # Scheduling policy
+        #'name',        # Process name
+        #'uid',         # Real user ID
+        #'euid',        # Effective user ID
+        #'gid',         # Real group ID
+        #'egid',        # Effective group ID
+        #'pctcpu',     # Percent of CPU usage (custom field)
+        #'pctmem'      # Percent of Memory usage (custom field)
     ]
 
     public
 
     ProcTableStruct = Struct.new('ProcTableStructLite', *@fields)
 
-    # In block form, yields a ProcTableStruct for each process entry that you
-    # have rights to. This method returns an array of ProcTableStruct's in
-    # non-block form.
+    # This method returns an array of ProcTableStruct's.
     #
-    # If a +pid+ is provided, then only a single ProcTableStruct is yielded or
-    # returned, or nil if no process information is found for that +pid+.
+    # If a +pids+ array is provided, then it only returns ProcTableStructs corresponding to the the pids provided.
+    # If you pass in one or more pids that don't have corresponding processes, those pids will simply be excluded
+    # from the results. So, if you pass an entire array of invalid pids, you'll get an empty array back.
     #
     # Example:
     #
     #   # Iterate over all processes
-    #   ProcTable.ps do |proc_info|
-    #      p proc_info
+    #   ProcTable.ps.each do |proc|
+    #     puts proc.pid
     #   end
     #
     #   # Print process table information for only pid 1001
@@ -119,14 +119,17 @@ module SysLite
     #  will simply skip to the next record. In short, this library will
     #  either return all information for a process, or none at all.
     #
-    def self.ps(pid=nil)
-      array  = block_given? ? nil : []
-      struct = nil
-      raise TypeError unless pid.is_a?(Fixnum) if pid
+    def self.ps(pids=nil)
+      result=[]
+      # if you pass an array of pids, look only at those. Otherwise, look at all pids in /proc/
+      if pids.is_a?(Array)
+        files = pids
+      else
+        Dir.chdir("/proc")
+        files = Dir.glob("[0-9]*")
+      end
 
-      Dir.foreach("/proc"){ |file|
-        next if file =~ /\D/ # Skip non-numeric directories
-        next unless file.to_i == pid if pid
+      files.each do |file|
 
         struct = ProcTableStruct.new
 
@@ -262,19 +265,13 @@ module SysLite
         
         struct.freeze # This is read-only data
 
-        if block_given?
-          yield struct
-        else
-          array << struct
-        end
-      }
 
-      if pid
-        struct
-      else 
-        array << @kthreadd if @kthreadd # not added when iterating.
-        array
+        result << struct
+
       end
+
+      result << @kthreadd if @kthreadd # not added when iterating.
+      result
     end
 
     # Returns an array of fields that each ProcTableStruct will contain. This

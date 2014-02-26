@@ -29,10 +29,18 @@ class ServerMetrics::Processes
   # most common - used if page size can't be retrieved. units are bytes.
   DEFAULT_PAGE_SIZE = 4096 
 
+  # options[:pid_cache_ttl] : the time (in seconds) to retain the last list of PIDs. Default is 0 seconds (no caching at all).
+  # If a number is provided, say p=ServerMetrics::Processes.new(pid_cache_ttl:10), then if ps run twice within 10 seconds,
+  # it *won't* scan for new processes the 2nd time. Instead, will look only at pids it knew about from the last run.
+  # The caching improves performance at the expense of accuracy. Setting a longer pid_cache_ttl means that a new process could
+  # pop up, and go undetected for for up to X seconds.
+  #
+  # Note that the pid_cache_ttl is only respected on linux systems.
   def initialize(options={})
     @last_run
     @last_jiffies
     @last_process_list
+    @pid_cache_ttl = options[:pid_cache_ttl] || 0
     if ServerMetrics::SystemInfo.os =~ /linux/
       @proc_table_klass = SysLite::ProcTable
     elsif Object.const_defined?('Sys') && Sys.const_defined?('ProcTable')
@@ -71,8 +79,18 @@ class ServerMetrics::Processes
   # and calculates CPU time for each process. Since CPU time has to be calculated relative to the last sample,
   # the collector has to be run twice to get CPU data.
   def calculate_processes
-    ## 1. get a list of all processes
-    processes = @proc_table_klass.ps.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
+    ## 1. get a list of processes
+    if @proc_table_klass.to_s == 'SysLite::ProcTable' && @last_process_list && @last_cached_pids && @last_cached_pids + @pid_cache_ttl >= Time.now
+      # if we're within @pid_cache_ttl, reuse the list of pids from last time
+      processes = @proc_table_klass.ps(@last_process_list.keys)
+      puts "using cached PIDS"
+    else
+      # otherwise, get a list of all processes
+      puts "Getting a new list PIDS"
+      processes = @proc_table_klass.ps
+      @last_cached_pids = Time.now
+    end
+    processes = processes.map{|p| ServerMetrics::Processes::Process.new(p) } # our Process object adds a method some behavior
 
     ## 2. loop through each process and calculate the CPU time.
     # The CPU values returned by ProcTable are cumulative for the life of the process, which is not what we want.
