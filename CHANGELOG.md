@@ -1,8 +1,11 @@
 # 1.1.2
 
-* For performance, using Dir#glob vs. Dir#foreach
-* For performance, using File.read vs. `cat FILE`. 
+Performance related:
+
+* Using Dir#glob vs. Dir#foreach
+* Using File.read vs. `cat FILE`. 
 * Removing commented out and unused elements from SysLite::ProcTable
+* Removed method_missing logic in Processes::Process to access the ProcTableStruct
 
 ## 1.1.1
 
