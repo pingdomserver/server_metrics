@@ -9,7 +9,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     ENV['LANG'] = 'C' # forcing English for parsing
     @df_output = `df -Pkh`.split("\n")
     @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev
-    @disk_stats = `cat /proc/diskstats`.split("\n")
+    @disk_stats = File.read("/proc/diskstats").split("\n")
 
     @devices.each do |device|
       get_sizes(device) # does its own reporting

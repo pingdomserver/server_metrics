@@ -38,8 +38,9 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
     attr_accessor :user, :system, :idle, :iowait, :interrupts, :procs_running, :procs_blocked, :time, :steal
 
     def self.fetch
-      output = `cat /proc/stat 2>&1`
+      output = File.read("/proc/stat")
 
+      # TODO - need to handle errors w/File#read
       if $? and !$?.success?
         raise ProcStatError, output
       end

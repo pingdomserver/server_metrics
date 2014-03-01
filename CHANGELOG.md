@@ -1,3 +1,9 @@
+# 1.1.2
+
+* For performance, using Dir#glob vs. Dir#foreach
+* For performance, using File.read vs. `cat FILE`. 
+* Removing commented out and unused elements from SysLite::ProcTable
+
 ## 1.1.1
 
 * Handling Infinite and NaN Process CPU Usage.
