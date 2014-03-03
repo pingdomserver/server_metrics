@@ -20,7 +20,7 @@ module ServerMetrics
       if os =~ /(darwin|freebsd)/
         `sysctl -n hw.ncpu`.to_i
       elsif os =~ /linux/
-        lines = File.read("/proc/cpuinfo").split("\n")
+        lines = File.read("/proc/cpuinfo").lines.to_a
         lines.grep(/^processor\s*:/i).size
       end
     rescue

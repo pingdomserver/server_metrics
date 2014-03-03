@@ -201,7 +201,7 @@ class ServerMetrics::Processes
     end
     
     def comm
-      @pts.comm
+      @comm ||= @pts.comm
     end
     
     def cmdline

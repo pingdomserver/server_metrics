@@ -7,23 +7,42 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   def build_report
     ENV['LANG'] = 'C' # forcing English for parsing
-    @df_output = `df -Pkh`.split("\n")
-    @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev
-    @disk_stats = File.read("/proc/diskstats").split("\n")
+    
+    @disk_stats = File.read("/proc/diskstats").lines.to_a
 
-    @devices.each do |device|
+    devices.each do |device|
       get_sizes(device) # does its own reporting
       get_stats(device) if linux? # does its own reporting
+    end
+  end
+  
+  # System calls are slow. Read once every minute and not on every innvocation. 
+  def df_output
+    if @last_df_output.nil? or @last_df_output < (Time.now-@options[:ttl].to_i*60)
+      @last_df_output = Time.now
+      @df_output = `df -Pkh`.lines.to_a
+    else
+      @df_output
+    end
+  end
+  
+  # System calls are slow. Read once every minute and not on every innvocation. 
+  def devices
+    if @devices.nil? or @last_devices_output < (Time.now-@options[:ttl].to_i*60)
+      @last_devices_output = Time.now
+      @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev    
+    else
+      @devices
     end
   end
 
   # called from build_report for each device
   def get_sizes(device)
-    header_line=@df_output.first
+    header_line=df_output.first
     headers = header_line.split(/\s+/,6) # limit to 6 columns - last column is "mounted on"
     parsed_lines=[] # Each line will look like {"%iused" => "38%","Avail" => "289Gi", "Capacity=> "38%", "Filesystem"=> "/dev/disk0s2","Mounted => "/", "Size" => "465Gi", "Used" => "176Gi", "ifree" => "75812051", "iused"  => "46116178"}
 
-    @df_output[1..@df_output.size-1].each do |line|
+    df_output[1..df_output.size-1].each do |line|
       values=line.split(/\s+/,6)
       parsed_lines<<Hash[headers.zip(values)]
     end

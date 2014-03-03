@@ -21,16 +21,22 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
     rescue ProcStatError
       @error = "could not retrieve CPU stats from /proc/stat"
     end
+    
+    # This requires a system call, which is slow. `scout_realtime` doesn't display server load, so this
+    # option allows `scout_realtime` to not collect load averages.
+    if !@options[:skip_load]
+      ENV['LANG'] = 'C' # forcing english for parsing
+      uptime_output = `uptime`
+      matches = uptime_output.match(/load averages?: ([\d.]+),? ([\d.]+),? ([\d.]+)\Z/)
 
-    ENV['LANG'] = 'C' # forcing english for parsing
-    uptime_output = `uptime`
-    matches = uptime_output.match(/load averages?: ([\d.]+),? ([\d.]+),? ([\d.]+)\Z/)
-
-    number_of_processors = ServerMetrics::SystemInfo.num_processors
-
-    report(:last_minute => matches[1].to_f / number_of_processors,
-           :last_five_minutes => matches[2].to_f / number_of_processors,
-           :last_fifteen_minutes => matches[3].to_f / number_of_processors)
+      report(:last_minute => matches[1].to_f / num_processors,
+             :last_five_minutes => matches[2].to_f / num_processors,
+             :last_fifteen_minutes => matches[3].to_f / num_processors)
+    end
+  end
+  
+  def num_processors
+    @num_processors ||= ServerMetrics::SystemInfo.num_processors  
   end
 
   # Helper class
@@ -38,14 +44,16 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
     attr_accessor :user, :system, :idle, :iowait, :interrupts, :procs_running, :procs_blocked, :time, :steal
 
     def self.fetch
-      output = File.read("/proc/stat")
-
-      # TODO - need to handle errors w/File#read
-      if $? and !$?.success?
-        raise ProcStatError, output
+      output = nil
+      begin
+        output = File.read("/proc/stat")
+      rescue Errno::ENOENT
+        # No such file or directory - /proc/stat
+        # /proc/stat doesn't exist on this system.
+        raise ProcStatError
       end
 
-      data = output.split(/\n/).collect { |line| line.split }
+      data = output.lines.collect { |line| line.split }
 
       cpu_stats = CpuStats.new
 

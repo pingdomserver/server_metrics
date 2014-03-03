@@ -1,3 +1,3 @@
 module ServerMetrics
-  VERSION = "1.1.2.alpha"
+  VERSION = "1.2.0.pre"
 end

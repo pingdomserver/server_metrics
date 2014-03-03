@@ -1,11 +1,13 @@
-# 1.1.2
+# 1.2.0
 
 Performance related:
 
-* Using Dir#glob vs. Dir#foreach
-* Using File.read vs. `cat FILE`. 
-* Removing commented out and unused elements from SysLite::ProcTable
-* Removed method_missing logic in Processes::Process to access the ProcTableStruct
+* Using `Dir#glob` vs. `Dir#foreach`
+* Using `File#read` vs. `cat FILE`. 
+* Removing commented out and unused elements from `SysLite::ProcTable`
+* Removed method_missing logic in `Processes::Process` to access the `ProcTableStruct`
+* `Disk` added caching logic via a `@option[:ttl]` to execute slow system calls at a lower interval (ex: ev 60 seconds)
+* `String#lines#to_a` vs. `String#split('\n')` (faster)
 
 ## 1.1.1
 
