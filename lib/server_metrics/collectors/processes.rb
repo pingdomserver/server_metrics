@@ -195,9 +195,33 @@ class ServerMetrics::Processes
       (utime || 0) + (stime || 0)  # utime and stime aren't available on mac. Result is %cpu is 0 on mac.
     end
     
-    # delegate everything else to ProcTable::Struct
-    def method_missing(sym, *args, &block)
-      @pts.send sym, *args, &block
+    # For better performance, not using #method_missing to just pass these off to ProcTable::Struct.
+    def pid
+      @pts.pid
+    end
+    
+    def comm
+      @comm ||= @pts.comm
+    end
+    
+    def cmdline
+      @pts.cmdline
+    end
+    
+    def ppid
+      @pts.ppid
+    end
+    
+    def utime
+      @pts.utime
+    end
+    
+    def stime
+      @pts.stime
+    end
+    
+    def rss
+      @pts.rss
     end
   end
 end
