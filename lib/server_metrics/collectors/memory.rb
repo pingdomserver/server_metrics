@@ -73,7 +73,7 @@ class ServerMetrics::Memory < ServerMetrics::Collector
         when 'used'
           report_data[:used] =
               (amount.to_f * DARWIN_UNITS[unit.downcase]).round
-        when 'free'
+        when 'free', 'unused'
           report_data[:avail] =
               (amount.to_f * DARWIN_UNITS[unit.downcase]).round
       end
