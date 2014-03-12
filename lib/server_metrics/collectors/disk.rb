@@ -6,7 +6,9 @@
 class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   def build_report
-    ENV['LANG'] = 'C' # forcing English for parsing
+    # forcing English for parsing
+    ENV['LC_ALL'] = 'C'
+    ENV['LANG'] = 'C'
     
     @disk_stats = File.read("/proc/diskstats").lines.to_a
 

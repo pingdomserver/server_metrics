@@ -1,3 +1,7 @@
+# 1.2.2
+
+* Setting LC_ALL for disk
+
 # 1.2.1
 
 * Fix for OSX Memory to support 'unused' in addition to 'free'
