@@ -136,7 +136,7 @@ module ServerMetrics
     end
 
     def linux?
-      RbConfig::CONFIG['target_os'] == 'linux'
+      RbConfig::CONFIG['target_os'].start_with?('linux')
     end
 
     def osx?
