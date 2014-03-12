@@ -1,6 +1,7 @@
 # 1.2.2
 
 * Setting LC_ALL for disk
+* More forgiving #linux? check
 
 # 1.2.1
 
