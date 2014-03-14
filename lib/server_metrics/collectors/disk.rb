@@ -14,7 +14,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
     devices.each do |device|
       get_sizes(device) # does its own reporting
-      get_stats(device) if linux? # does its own reporting
+      get_io_stats(device) if linux? # does its own reporting
     end
   end
   
@@ -51,6 +51,8 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
     # select the right line
     hash = parsed_lines.select{|l| l["Filesystem"] == device}.first
+    # device wasn't found. could be a mapped device. skip over. 
+    return if hash.nil?
     result = {}
     hash.each_pair do |key,value|
       key=normalize_key(key) # downcase, make a symbol, etc
@@ -62,7 +64,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   end
 
   # called from build_report for each device
-  def get_stats(device)
+  def get_io_stats(device)
     stats = iostat(device)
 
     if stats

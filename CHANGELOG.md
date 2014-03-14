@@ -1,13 +1,17 @@
-# 1.2.2
+## 1.2.3
+
+* Skipping mapped devices in disk collector
+
+## 1.2.2
 
 * Setting LC_ALL for disk
 * More forgiving #linux? check
 
-# 1.2.1
+## 1.2.1
 
 * Fix for OSX Memory to support 'unused' in addition to 'free'
 
-# 1.2.0
+## 1.2.0
 
 Performance related:
 
