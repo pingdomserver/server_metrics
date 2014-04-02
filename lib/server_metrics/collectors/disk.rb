@@ -10,7 +10,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     ENV['LC_ALL'] = 'C'
     ENV['LANG'] = 'C'
     
-    @disk_stats = File.read("/proc/diskstats").lines.to_a
+    @disk_stats = File.read("/proc/diskstats").lines.to_a unless osx?
 
     devices.each do |device|
       get_sizes(device) # does its own reporting

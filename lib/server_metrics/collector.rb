@@ -136,12 +136,18 @@ module ServerMetrics
     end
 
     def linux?
-      RbConfig::CONFIG['target_os'].start_with?('linux')
+      ruby_config['target_os'].start_with?('linux')
     end
 
     def osx?
-      RbConfig::CONFIG['target_os'] == 'darwin'
+      ruby_config['target_os'].start_with?('darwin')
     end
 
+    private
+
+    # Returns hash of Ruby config parameters.
+    def ruby_config
+      RbConfig::CONFIG
+    end
   end
 end
