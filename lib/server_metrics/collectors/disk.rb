@@ -10,8 +10,6 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     ENV['LC_ALL'] = 'C'
     ENV['LANG'] = 'C'
     
-    @disk_stats = File.read("/proc/diskstats").lines.to_a
-
     devices.each do |device|
       get_sizes(device) # does its own reporting
       get_io_stats(device) if linux? # does its own reporting
@@ -103,20 +101,27 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   #   match /proc/diskstats output.
   def iostat(dev)
 
-    # if this is a mapped device, translate it into the mapped name for lookup in @disk_stats
+    # if this is a mapped device, translate it into the mapped name for lookup in disk_stats
     if dev =~ %r(^/dev/mapper/)
       name_to_find = File.readlink(dev).split("/").last rescue dev
     else
       name_to_find = dev
     end
 
-    # narrow our @disk_stats down to a list of possible devices
-    possible_devices = @disk_stats.map { |line|
+    # narrow our disk_stats down to a list of possible devices
+    possible_devices = disk_stats.map { |line|
       Hash[*COLUMNS.zip(line.strip.split(/\s+/).collect { |v| Integer(v) rescue v }).flatten]
     }.select{|entry| name_to_find.include?(entry['name']) }
 
     # return an exact match (preferred) or a partial match. If neither exist, nil will be returned
     return possible_devices.find { |entry| name_to_find == entry['name'] } || possible_devices.first
+  end
+
+  # Returns /proc/diskstats as array.
+  def disk_stats
+    File.readlines("/proc/diskstats")
+  rescue Errno::ENOENT # Handle missing /proc/diskstats, i.e. on Mac OS X.
+    []
   end
 
   def normalize_key(key)
