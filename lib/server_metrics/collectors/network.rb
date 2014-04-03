@@ -3,7 +3,6 @@ require "server_metrics/system_info"
 class ServerMetrics::Network < ServerMetrics::MultiCollector
 
   def build_report
-
     if linux?
       lines = File.read("/proc/net/dev").lines.to_a[2..-1]
       interfaces = []

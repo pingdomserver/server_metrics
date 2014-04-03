@@ -1,3 +1,7 @@
+## 1.2.4
+
+* Collecting OSX disk capacity metrics
+
 ## 1.2.3
 
 * Skipping mapped devices in disk collector
