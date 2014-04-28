@@ -9,7 +9,7 @@ class ServerMetrics::Network < ServerMetrics::MultiCollector
       lines.each do |line|
         iface, rest = line.split(':', 2).collect { |e| e.strip }
         interfaces << iface
-        next unless iface =~ /venet|eth/
+        next if iface =~ /lo/
         found = true
         cols = rest.split(/\s+/)
 
