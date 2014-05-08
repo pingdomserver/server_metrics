@@ -1,3 +1,7 @@
+## 1.2.5
+
+* Gather all non-loopback network interfaces by default.
+
 ## 1.2.4
 
 * Collecting OSX disk capacity metrics
