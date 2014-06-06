@@ -15,9 +15,9 @@ class ServerMetrics::Network < ServerMetrics::MultiCollector
 
         bytes_in, packets_in, bytes_out, packets_out = cols.values_at(0, 1, 8, 9).collect { |i| i.to_i }
 
-        counter(iface, :bytes_in, bytes_in.to_f / 1024.0, :per => :second, :round => 2)
+        counter(iface, :bytes_in, bytes_in.to_f / 1024.0 * 8.0, :per => :second, :round => 2)
         counter(iface, :packets_in, packets_in.to_f, :per => :second, :round => 2)
-        counter(iface, :bytes_out, bytes_out.to_f / 1024.0, :per => :second, :round => 2)
+        counter(iface, :bytes_out, bytes_out.to_f / 1024.0 * 8.0, :per => :second, :round => 2)
         counter(iface, :packets_out, packets_out.to_f, :per => :second, :round => 2)
       end
     end
