@@ -1,3 +1,7 @@
+## 1.2.6
+
+* If '^/vz' is detected in the mount output, add /dev/simfs to the device list for disk collector
+
 ## 1.2.5
 
 * Gather all non-loopback network interfaces by default.
