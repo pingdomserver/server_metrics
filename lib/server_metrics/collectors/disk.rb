@@ -31,9 +31,6 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     if @devices.nil? or @last_devices_output < (Time.now-@options[:ttl].to_i*60)
       @last_devices_output = Time.now
       @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev   
-      if `mount`.split("\n").grep(/^\/vz/).size > 0 # to enable disk space usage display for openvz VPS
-        @devices.push("/dev/simfs");
-      end
     else
       @devices
     end
