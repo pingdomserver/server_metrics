@@ -1,3 +1,5 @@
+require "server_metrics/system_info"
+
 class ServerMetrics::Memory < ServerMetrics::Collector
   # reports darwin units as MB
   DARWIN_UNITS = { "b" => 1/(1024*1024),
@@ -17,7 +19,7 @@ class ServerMetrics::Memory < ServerMetrics::Collector
 
   def linux_memory
     mem_info = {}
-    File.read("/proc/meminfo").each_line do |line|
+    File.read("#{ServerMetrics::SystemInfo.proc_dir}/meminfo").each_line do |line|
       _, key, value = *line.match(/^(\w+):\s+(\d+)\s/)
       mem_info[key] = value.to_i
     end

@@ -46,7 +46,7 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
     def self.fetch
       output = nil
       begin
-        output = File.read("/proc/stat")
+        output = File.read("#{ServerMetrics::SystemInfo.proc_dir}/stat")
       rescue Errno::ENOENT
         # No such file or directory - /proc/stat
         # /proc/stat doesn't exist on this system.

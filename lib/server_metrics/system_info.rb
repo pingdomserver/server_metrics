@@ -42,6 +42,11 @@ module ServerMetrics
     def self.to_h
       {:architecture => architecture, :os=>os, :os_version=>os_version, :num_processors=>num_processors, :hostname=>hostname, :timezone=>timezone, :timezone_offset=>timezone_offset }
     end
+
+    # When run inside a docker container, we want to read from the host proc dir. 
+    def self.proc_dir
+      @@proc_dir ||= (Dir.exist?("/host/proc") ? "/host/proc" : "/proc")
+    end
   end
 end
 

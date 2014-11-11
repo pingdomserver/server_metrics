@@ -1,3 +1,5 @@
+require "server_metrics/system_info"
+
 # Collects Disk metrics on eligible filesystems. Reports a hash of hashes, with the first hash keyed by device name.
 #
 # TODO: Currently, this reports on devices that begins with /dev as listed by `mount`. Revisit this.
@@ -119,7 +121,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   # Returns /proc/diskstats as array.
   def disk_stats
-    File.readlines("/proc/diskstats")
+    File.readlines("#{ServerMetrics::SystemInfo.proc_dir}/diskstats")
   rescue Errno::ENOENT # Handle missing /proc/diskstats, i.e. on Mac OS X.
     []
   end
