@@ -44,7 +44,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
     df_output[1..df_output.size-1].each do |line|
       values=line.split(/\s+/,6)
-      parsed_lines<<Hash[headers.zip(values)]
+      parsed_lines<<Hash[*headers.zip(values).flatten]
     end
 
     # select the right line

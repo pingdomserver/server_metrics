@@ -6,7 +6,7 @@ class TestWithFixtures < Test::Unit::TestCase
     fixture = fixtures(:cpu)
     c = ServerMetrics::Cpu.new()
 
-    ServerMetrics::Cpu::CpuStats.expects(:`).with("cat /proc/stat 2>&1").returns(fixture.command("cat /proc/stat 2>&1")).once
+    File.expects(:read).with("/proc/stat").returns(fixture.command("cat /proc/stat 2>&1")).once
     c.expects(:`).with("uptime").returns(fixture.command("uptime")).once
 
     c.run
@@ -39,7 +39,7 @@ class TestWithFixtures < Test::Unit::TestCase
     fixture = fixtures(:disk)
     c.expects(:`).with("mount").returns(fixture.command("mount")).once
     c.expects(:`).with("df -Pkh").returns(fixture.command("df -Pkh")).once
-    c.expects(:`).with("cat /proc/diskstats").returns(fixture.command("cat /proc/diskstats")).once
+    File.expects(:readlines).with("/proc/diskstats").returns(fixture.command("cat /proc/diskstats")).once
     c.run
 
     assert_equal ["/dev/xvda1"], c.data.keys
@@ -98,7 +98,7 @@ eos
     fixture = fixtures(:disk)
     c.expects(:`).with("mount").returns(fixture.command("mount")).once
     c.expects(:`).with("df -Pkh").returns(fixture.command("df -Pkh")).once
-    c.expects(:`).with("cat /proc/diskstats").returns(fixture.command("cat /proc/diskstats", "ubuntu second run")).once
+    File.expects(:readlines).with("/proc/diskstats").returns(fixture.command("cat /proc/diskstats", "ubuntu second run")).once
 
     Timecop.travel(60) do
       c.run
@@ -116,7 +116,7 @@ eos
     fixture = fixtures(:memory)
     c = ServerMetrics::Memory.new()
     c.expects(:`).with("uname").returns("Linux").times(2)
-    c.expects(:`).with("cat /proc/meminfo").returns(fixture.command("cat /proc/meminfo")).once
+    File.expects(:read).with("/proc/meminfo").returns(fixture.command("cat /proc/meminfo")).once
     c.run
     assert_equal 7, c.data.keys.size
     # the field names should align with the disk field names
@@ -133,10 +133,10 @@ eos
     ServerMetrics::Network.any_instance.stubs("linux?").returns(true)
     fixture = fixtures(:network)
     c = ServerMetrics::Network.new()
-    c.expects(:`).with("cat /proc/net/dev").returns(fixture.command("cat /proc/net/dev")).once
+    File.expects(:read).with("/proc/net/dev").returns(fixture.command("cat /proc/net/dev")).once
     c.run
 
-    c.expects(:`).with("cat /proc/net/dev").returns(fixture.command("cat /proc/net/dev", "second run")).once
+    File.expects(:read).with("/proc/net/dev").returns(fixture.command("cat /proc/net/dev", "second run")).once
     Timecop.travel(60) do
       c.run
     end

@@ -1,6 +1,10 @@
 $LOAD_PATH << File.expand_path( File.dirname(__FILE__) + '/../lib' ) # needed because when running tests, Rubygems manage $LOAD_PATH like it does in runtime
 require 'rubygems' # so the development-only dependencies below can be loaded
-require 'pry'
+begin
+  require 'pry'
+rescue LoadError
+  # not using pry
+end
 require 'awesome_print'
 require 'timecop'
 require 'test/unit'

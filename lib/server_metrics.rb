@@ -1,4 +1,5 @@
 require 'server_metrics/version'
+require 'server_metrics/backward_compatibility_patch'
 require 'server_metrics/collector'
 require 'server_metrics/multi_collector'
 require 'server_metrics/system_info'
