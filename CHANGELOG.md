@@ -1,3 +1,7 @@
+## 1.2.8
+
+* compatibility with Ruby 1.8.5 and 1.8.6
+
 ## 1.2.7
 
 * Revert vz changes from 1.2.6
