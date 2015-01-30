@@ -80,15 +80,17 @@ module SysLite
       array  = block_given? ? nil : []
       struct = nil
       raise TypeError unless pid.is_a?(Fixnum) if pid
+
+      proc_dir = ServerMetrics::SystemInfo.proc_dir
       
-      Dir.chdir("/proc")
+      Dir.chdir(proc_dir)
       Dir.glob("[0-9]*").each do |file|
         next unless file.to_i == pid if pid
 
         struct = ProcTableStruct.new
 
         # Get /proc/<pid>/stat information
-        stat = IO.read("/proc/#{file}/stat") rescue next
+        stat = IO.read("#{proc_dir}/#{file}/stat") rescue next
 
         # Deal with spaces in comm name. Courtesy of Ara Howard.
         re = %r/\([^\)]+\)/

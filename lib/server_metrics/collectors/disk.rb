@@ -1,3 +1,5 @@
+require "server_metrics/system_info"
+
 # Collects Disk metrics on eligible filesystems. Reports a hash of hashes, with the first hash keyed by device name.
 #
 # TODO: Currently, this reports on devices that begins with /dev as listed by `mount`. Revisit this.
@@ -12,7 +14,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     
     devices.each do |device|
       get_sizes(device) # does its own reporting
-      get_io_stats(device) if linux? # does its own reporting
+      get_io_stats(device[:name]) if linux? # does its own reporting
     end
   end
   
@@ -30,10 +32,20 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   def devices
     if @devices.nil? or @last_devices_output < (Time.now-@options[:ttl].to_i*60)
       @last_devices_output = Time.now
-      @devices = `mount`.split("\n").grep(/^\/dev/).map{|l|l.split.first} # any device that starts with /dev   
-    else
-      @devices
+      # if running inside a docker container, we want the devices mounted on the host
+      mount_output = dockerized_agent? ? `cat /host/etc/mtab` : `mount`
+      @devices = mount_output.split("\n").grep(/^\/dev/).map{|l| {:name => l.split.first, :aliases => []}} # any device that starts with /dev   
+      if dockerized_agent?
+        `blkid`.split("\n").grep(/ UUID=/).each do |device|
+          name = device.match(/\A[^\:]*/)[0]
+          uuid = device.match(/\ UUID="(.+?)"/)[1]
+          if host_device = @devices.find { |dn| dn[:name] == name }
+            host_device[:aliases] << "/dev/disk/by-uuid/#{uuid}"
+          end
+        end
+      end
     end
+    @devices
   end
 
   # called from build_report for each device
@@ -48,7 +60,11 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     end
 
     # select the right line
-    hash = parsed_lines.select{|l| l["Filesystem"] == device}.first
+    hash = parsed_lines.find {|l| l["Filesystem"] == device[:name]}
+    # device wasn't found. check device aliases
+    if hash.nil?
+      hash = parsed_lines.find {|l| device[:aliases].include?(l["Filesystem"])}
+    end
     # device wasn't found. could be a mapped device. skip over. 
     return if hash.nil?
     result = {}
@@ -58,35 +74,35 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
       result[key]=value
     end
 
-    report(device, result)
+    report(device[:name], result)
   end
 
   # called from build_report for each device
-  def get_io_stats(device)
-    stats = iostat(device)
+  def get_io_stats(device_name)
+    stats = iostat(device_name)
 
     if stats
-      counter(device, :rps,   stats['rio'],        :per => :second)
-      counter(device, :wps,   stats['wio'],        :per => :second)
-      counter(device, :rps_kb, stats['rsect'] / 2,  :per => :second)
-      counter(device, :wps_kb, stats['wsect'] / 2,  :per => :second)
-      counter(device, :utilization,  stats['use'] / 10.0, :per => :second)
+      counter(device_name, :rps,   stats['rio'],        :per => :second)
+      counter(device_name, :wps,   stats['wio'],        :per => :second)
+      counter(device_name, :rps_kb, stats['rsect'] / 2,  :per => :second)
+      counter(device_name, :wps_kb, stats['wsect'] / 2,  :per => :second)
+      counter(device_name, :utilization,  stats['use'] / 10.0, :per => :second)
       # Not 100% sure that average queue length is present on all distros.
       if stats['aveq']
-        counter(device, :average_queue_length,  stats['aveq'], :per => :second)
+        counter(device_name, :average_queue_length,  stats['aveq'], :per => :second)
       end
 
-      if old = memory(device, "stats")
+      if old = memory(device_name, "stats")
         ios = (stats['rio'] - old['rio']) + (stats['wio']  - old['wio'])
 
         if ios > 0
           await = ((stats['ruse'] - old['ruse']) + (stats['wuse'] - old['wuse'])) / ios.to_f
 
-          report(device, :await => await)
+          report(device_name, :await => await)
         end
       end
 
-      remember(device, "stats" => stats)
+      remember(device_name, "stats" => stats)
     end
   end
 
@@ -119,7 +135,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
 
   # Returns /proc/diskstats as array.
   def disk_stats
-    File.readlines("/proc/diskstats")
+    File.readlines("#{ServerMetrics::SystemInfo.proc_dir}/diskstats")
   rescue Errno::ENOENT # Handle missing /proc/diskstats, i.e. on Mac OS X.
     []
   end
@@ -127,5 +143,9 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   def normalize_key(key)
     key = "Used Percent" if /capacity|use.*%|%.*use/i === key
     key.downcase.gsub(" ", "_").to_sym
+  end
+
+  def dockerized_agent?
+    File.exists?("/host/etc/mtab")
   end
 end

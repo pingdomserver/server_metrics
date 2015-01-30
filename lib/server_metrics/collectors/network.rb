@@ -4,7 +4,7 @@ class ServerMetrics::Network < ServerMetrics::MultiCollector
 
   def build_report
     if linux?
-      lines = File.read("/proc/net/dev").lines.to_a[2..-1]
+      lines = File.read("#{ServerMetrics::SystemInfo.proc_dir}/net/dev").lines.to_a[2..-1]
       interfaces = []
       lines.each do |line|
         iface, rest = line.split(':', 2).collect { |e| e.strip }
