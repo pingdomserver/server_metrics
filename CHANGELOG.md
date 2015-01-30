@@ -1,3 +1,7 @@
+## 1.2.8
+
+* Add support for dockerized metric gathering
+
 ## 1.2.7
 
 * Revert vz changes from 1.2.6
