@@ -1,3 +1,7 @@
+# 1.2.9.1
+
+* Ruby 1.8.7 fix
+
 ## 1.2.9
 
 * Add support for dockerized metric gathering
