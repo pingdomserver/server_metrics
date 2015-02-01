@@ -45,7 +45,7 @@ module ServerMetrics
 
     # When run inside a docker container, we want to read from the host proc dir. 
     def self.proc_dir
-      @@proc_dir ||= (Dir.exist?("/host/proc") ? "/host/proc" : "/proc")
+      @@proc_dir ||= (File.directory?("/host/proc") ? "/host/proc" : "/proc")
     end
   end
 end
