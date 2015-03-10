@@ -93,7 +93,7 @@ module SysLite
         stat = IO.read("#{proc_dir}/#{file}/stat") rescue next
 
         # Deal with spaces in comm name. Courtesy of Ara Howard.
-        re = %r/\([^\)]+\)/
+        re = %r/\(.*\)/
         comm = stat[re]
         comm.tr!(' ', '-')
         stat[re] = comm
