@@ -102,7 +102,7 @@ module SysLite
 
         struct.pid         = stat[0].to_i
         # Remove parens. Note this could be overwritten in #get_comm_group_name.
-        struct.comm        = stat[1].tr('()','')
+        struct.comm        = stat[1].tr('()','').squeeze('-')
         struct.ppid        = stat[3].to_i
         struct.utime       = stat[13].to_i
         struct.stime       = stat[14].to_i
