@@ -1,3 +1,3 @@
 module ServerMetrics
-  VERSION = '1.2.9.1'
+  VERSION = '1.2.10'
 end
