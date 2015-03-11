@@ -1,3 +1,7 @@
+# 1.2.10
+
+* Fix comm name detection with parenthesis
+
 # 1.2.9.1
 
 * Ruby 1.8.7 fix
