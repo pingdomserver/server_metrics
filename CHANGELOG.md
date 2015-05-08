@@ -1,3 +1,7 @@
+# 1.2.11
+
+* Ignore docker/lxc/etc veth interfaces with more than 4 characters
+
 # 1.2.10
 
 * Fix comm name detection with parenthesis
