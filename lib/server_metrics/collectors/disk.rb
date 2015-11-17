@@ -44,6 +44,10 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
           end
         end
       end
+      @devices.each do |device|
+        symlink_name =  File.readlink(device[:name]) rescue nil
+        device[:aliases] << symlink_name if symlink_name
+      end
     end
     @devices
   end
