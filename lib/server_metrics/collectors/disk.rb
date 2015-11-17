@@ -98,6 +98,10 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
         if ios > 0
           await = ((stats['ruse'] - old['ruse']) + (stats['wuse'] - old['wuse'])) / ios.to_f
 
+          # FIXME: sometimes calculating await results in a large negative number.
+          # If that happens, just set await to -1.
+          await = -1 if await < 0
+
           report(device_name, :await => await)
         end
       end
