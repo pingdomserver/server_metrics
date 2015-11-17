@@ -1,3 +1,7 @@
+# 1.2.12
+
+* Check if disk is symlink during size check
+
 # 1.2.11
 
 * Ignore docker/lxc/etc veth interfaces with more than 4 characters
