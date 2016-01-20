@@ -1,3 +1,7 @@
+# 1.2.13
+
+* Handle CPU interrupt rollover
+
 # 1.2.12
 
 * Check if disk is symlink during size check

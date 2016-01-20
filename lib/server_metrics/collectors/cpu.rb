@@ -128,8 +128,9 @@ class ServerMetrics::Cpu < ServerMetrics::Collector
 
       if self.time && other.time
         diff_in_seconds = self.time.to_f - other.time.to_f
-
-        results[:interrupts] = (self.interrupts.to_f - other.interrupts.to_f) / diff_in_seconds
+        diff_interrupts = (self.interrupts.to_f - other.interrupts.to_f) / diff_in_seconds
+        # If interrupts counter has rolled over, start at 0
+        results[:interrupts] = diff_interrupts >= 0 ? diff_interrupts : 0
       end
 
       results
