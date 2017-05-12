@@ -7,10 +7,10 @@ Gem::Specification.new do |spec|
   spec.name          = "server_metrics"
   spec.version       = ServerMetrics::VERSION
   spec.authors       = ["Andre Lewis", "Derek Haynes", "Matt Rose"]
-  spec.email         = ["support@scoutapp.com"]
+  spec.email         = ["support.server@pingdom.com"]
   spec.description   = %q{Collect information about disks, memory, CPU, networks, and processes}
   spec.summary       = %q{Used by the Scout agent, but also available as a stand-lone gem}
-  spec.homepage      = "http://scoutapp.com"
+  spec.homepage      = "http://server.pingdom.com"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)

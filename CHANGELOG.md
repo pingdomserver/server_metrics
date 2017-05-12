@@ -1,3 +1,7 @@
+# 1.2.15
+
+* Update gemspec
+
 # 1.2.14
 
 * Disk symlink alias uses full path
