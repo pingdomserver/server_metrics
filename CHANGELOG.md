@@ -1,3 +1,7 @@
+# 1.2.16
+
+* ignoring disc devices via regexp
+
 # 1.2.15
 
 * Update gemspec
@@ -68,7 +72,7 @@
 Performance related:
 
 * Using `Dir#glob` vs. `Dir#foreach`
-* Using `File#read` vs. `cat FILE`. 
+* Using `File#read` vs. `cat FILE`.
 * Removing commented out and unused elements from `SysLite::ProcTable`
 * Removed method_missing logic in `Processes::Process` to access the `ProcTableStruct`
 * `Disk` added caching logic via a `@option[:ttl]` to execute slow system calls at a lower interval (ex: ev 60 seconds)
@@ -104,7 +108,7 @@ Performance related:
 
 ## 0.0.9.0
 
-* Reporting process memory in MB, not in page size. 
+* Reporting process memory in MB, not in page size.
 * When determining process cpu usage, caching number of processors.
 
 ## 0.0.8.9
