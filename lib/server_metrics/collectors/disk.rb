@@ -11,14 +11,14 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     # forcing English for parsing
     ENV['LC_ALL'] = 'C'
     ENV['LANG'] = 'C'
-    
+
     devices.each do |device|
       get_sizes(device) # does its own reporting
       get_io_stats(device[:name]) if linux? # does its own reporting
     end
   end
-  
-  # System calls are slow. Read once every minute and not on every innvocation. 
+
+  # System calls are slow. Read once every minute and not on every innvocation.
   def df_output
     if @last_df_output.nil? or @last_df_output < (Time.now-@options[:ttl].to_i*60)
       @last_df_output = Time.now
@@ -27,14 +27,19 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
       @df_output
     end
   end
-  
-  # System calls are slow. Read once every minute and not on every innvocation. 
+
+  # System calls are slow. Read once every minute and not on every innvocation.
   def devices
     if @devices.nil? or @last_devices_output < (Time.now-@options[:ttl].to_i*60)
       @last_devices_output = Time.now
       # if running inside a docker container, we want the devices mounted on the host
       mount_output = dockerized_agent? ? `cat /host/etc/mtab` : `mount`
-      @devices = mount_output.split("\n").grep(/^\/dev/).map{|l| {:name => l.split.first, :aliases => []}} # any device that starts with /dev   
+      # @devices = mount_output.split("\n").grep(/^\/dev/).map{|l| {:name => l.split.first, :aliases => []}} # any device that starts with /dev
+      @unfiltered_devices = mount_output.split("\n").grep(/^\/dev/).reject do |e|
+        regex = Regexp.new(@options[:ignored_devices]) rescue next
+        !!e.match(regex)
+      end # any device that starts with /dev
+      @devices = @unfiltered_devices.map{|l| {:name => l.split.first, :aliases => []}}
       if dockerized_agent?
         `blkid`.split("\n").grep(/ UUID=/).each do |device|
           name = device.match(/\A[^\:]*/)[0]
@@ -72,7 +77,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     if hash.nil?
       hash = parsed_lines.find {|l| device[:aliases].include?(l["Filesystem"])}
     end
-    # device wasn't found. could be a mapped device. skip over. 
+    # device wasn't found. could be a mapped device. skip over.
     return if hash.nil?
     result = {}
     hash.each_pair do |key,value|
