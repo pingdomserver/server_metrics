@@ -20,7 +20,7 @@ module ServerMetrics
       @options = options
       @data={}
       @memory={}
-      @collector_id = self.class.name+'-'+@options.to_a.sort_by { |a| a.first }.flatten.join('-')
+      @collector_id = self.class.name+'-'+@options.to_a.sort_by { |a| a.first.to_s }.flatten.join('-')
       @error=nil
     end
 
