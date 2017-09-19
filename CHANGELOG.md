@@ -1,3 +1,7 @@
+# 1.2.17
+
+* Fixed collector sort block older Rubies compatibility
+
 # 1.2.16
 
 * ignoring disc devices via regexp
