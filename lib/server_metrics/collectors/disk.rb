@@ -76,7 +76,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
     # device wasn't found. check device aliases
     if hash.nil?
       hash = parsed_lines.find do |l|
-        device[:aliases].include?(l["Filesystem"]) || device[:mounted_on].include?(l["Mounted on"])
+        device[:aliases].include?(l["Filesystem"]) || device[:mounted_on] == l["Mounted on"]
       end
     end
     # device wasn't found. could be a mapped device. skip over.
