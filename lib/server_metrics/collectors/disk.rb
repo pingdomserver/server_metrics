@@ -39,7 +39,7 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
         regex = Regexp.new(@options[:ignored_devices]) rescue next
         !!e.match(regex)
       end # any device that starts with /dev
-      @devices = @unfiltered_devices.map{|l| {:name => l.split.first, :aliases => []}}
+      @devices = @unfiltered_devices.map{|l| {:name => l.split.first, :aliases => [], :mounted_on => l.split[2]}}
       if dockerized_agent?
         `blkid`.split("\n").grep(/ UUID=/).each do |device|
           name = device.match(/\A[^\:]*/)[0]
@@ -63,19 +63,21 @@ class ServerMetrics::Disk < ServerMetrics::MultiCollector
   # called from build_report for each device
   def get_sizes(device)
     header_line=df_output.first
-    headers = header_line.split(/\s+/,6) # limit to 6 columns - last column is "mounted on"
-    parsed_lines=[] # Each line will look like {"%iused" => "38%","Avail" => "289Gi", "Capacity=> "38%", "Filesystem"=> "/dev/disk0s2","Mounted => "/", "Size" => "465Gi", "Used" => "176Gi", "ifree" => "75812051", "iused"  => "46116178"}
+    headers = header_line.split(/\s+/,6).map(&:chomp) # limit to 6 columns - last column is "mounted on"
+    parsed_lines=[] # Each line will look like {"%iused" => "38%","Avail" => "289Gi", "Capacity=> "38%", "Filesystem"=> "/dev/disk0s2","Mounted on"=> "/", "Size" => "465Gi", "Used" => "176Gi", "ifree" => "75812051", "iused"  => "46116178"}
 
     df_output[1..df_output.size-1].each do |line|
-      values=line.split(/\s+/,6)
-      parsed_lines<<Hash[*headers.zip(values).flatten]
+      values=line.split(/\s+/,6).map(&:chomp)
+      parsed_lines << Hash[*headers.zip(values).flatten]
     end
 
     # select the right line
     hash = parsed_lines.find {|l| l["Filesystem"] == device[:name]}
     # device wasn't found. check device aliases
     if hash.nil?
-      hash = parsed_lines.find {|l| device[:aliases].include?(l["Filesystem"])}
+      hash = parsed_lines.find do |l|
+        device[:aliases].include?(l["Filesystem"]) || device[:mounted_on] == l["Mounted on"]
+      end
     end
     # device wasn't found. could be a mapped device. skip over.
     return if hash.nil?
